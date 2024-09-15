@@ -1,43 +1,44 @@
 // ------------------------------------------------
+// Etiquetas
+// ------------------------------------------------
+//#define LOG // Comentar esta linea para desactivar logs
+
+// ------------------------------------------------
 // Constantes
 // ------------------------------------------------
 #define VALOR_CONTINUE -1
-// Tolerancia de longitud para apagar el motor
-#define DISTANCIA_MINIMA_V 150
-// --------------------------------------------------------------------------
-// REVISAR LOGICA (CUANDO SE VA DESPLAZANDO SUMA EL TOPE Y NO DESPLAZA DEL TODO)
-// VER FUNCION checkearPosicionMotor
-#define DISTANCIA_MAXIMA_H 200
-// --------------------------------------------------------------------------
 #define MARGEN_DE_ERROR 1L
-#define ULTRASONIDO_EN_MOVIMIENTO true
-#define ULTRASONIDO_SIN_MOVIMIENTO false
 #define BAUD_RATE 9600
 #define MOTOR_SPEED 128
-#define CONST_VELOCIDAD_SONIDO 57
+#define VELOCIDAD_DEL_SONIDO 57
+#define MODO_PIN_SIERRA RISING
 
-// Pulsadores
-#define PULSADOR_SIERRA 3
-#define PULSADOR_DER 4
-#define PULSADOR_IZQ 5
+// ------------------------------------------------
+// Umbrales Distancia
+// ------------------------------------------------
+#define DISTANCIA_MINIMA_V 150
+#define DISTANCIA_MAXIMA_H 200  // REVISAR LOGICA (CUANDO SE VA DESPLAZANDO SUMA EL TOPE Y NO DESPLAZA DEL TODO), VER FUNCION checkearPosicionMotor
 
-// Puente H
-#define PM_SPEED 6  // Modulacion del PWM M1
-#define M_T1 7      // Control Motor P2 L293D, Terminal 1
-#define M_T2 8      // Control Motor P2 L293D, Terminal 2
+// ------------------------------------------------
+// Pines sensores (A = analógico | D = Digital)
+// ------------------------------------------------
+#define PIN_D_PULSADOR_SIERRA 3
+#define PIN_D_PULSADOR_DERECHA 4
+#define PIN_D_PULSADOR_IZQUIERDA 5
+#define PIN_D_TRIGGER_H 10
+#define PIN_D_ECHO_H 11
+#define PIN_D_TRIGGER_V 12
+#define PIN_D_ECHO_V 13
 
-// LED's
-#define LED_SIERRA 9
-#define LED_DESPLAZAMIENTO A0
-
-// Relé
-#define RELE 2
-
-// Sensores Ultrasonido
-#define TRIGGER_H 10
-#define ECHO_H 11
-#define TRIGGER_V 12
-#define ECHO_V 13
+// ------------------------------------------------
+// Pines actuadores (P = PWM | D = Digital)
+// ------------------------------------------------
+#define PIN_D_LED_SIERRA 9
+#define PIN_D_LED_DESPLAZAMIENTO A0
+#define PIN_P_MDC_SPEED 6   // Modulacion del PWM M1
+#define PIN_D_MDC_T1 7      // Control Motor P2 L293D, Terminal 1
+#define PIN_D_MDC_T2 8      // Control Motor P2 L293D, Terminal 2
+#define PIN_D_RELE 2
 
 // ------------------------------------------------
 // Estados del embebido
@@ -65,67 +66,142 @@ enum eventoEnum
   EVENTO_UMBRAL_VERTICAL_SUPERADO,
 };
 
-// INTERRUPCIONES
-#define INTERRUPCION_SIERRA digitalPinToInterrupt(PULSADOR_SIERRA)
-
-// MODO INTERRUPCION
-#define MODO_PIN_SIERRA RISING
+// ------------------------------------------------
+// Estados del sensor distancia
+// ------------------------------------------------
+enum estadoSensorUltrasonidoEnum
+{
+    ULTRASONIDO_EN_MOVIMIENTO,
+    ULTRASONIDO_SIN_MOVIMIENTO
+};
 
 // ------------------------------------------------
-// Estructura de evento
+// Estructura de Actuadores
 // ------------------------------------------------
-struct structEvento
+typedef struct
+{
+    int pinTerminal1, pinTerminal2, pinVelocidad;
+} PuenteH;
+
+typedef struct
+{
+    int pin;
+    bool encendido;
+} LedDigital;
+
+// ------------------------------------------------
+// Estructura de Evento
+// ------------------------------------------------
+typedef struct
 {
     eventoEnum tipo;
     int valor;
-};
+} Evento; 
+
+// ------------------------------------------------
+// Estructura de Sensores
+// ------------------------------------------------
+typedef struct
+{
+    int pinTrigger, pinEcho;
+    estadoSensorUltrasonidoEnum estado;
+    unsigned long cm;
+} SensorUltrasonido;
 
 // ------------------------------------------------
 // Variables globales
 // ------------------------------------------------
-bool interrupcionDetectada = false;
 bool imprimirMsg = true;
-int pulsadorPresionado;
-int valorDesplazamiento = 0;  // Variable para almacenar el valor de desplazamiento del motor en cm
-int posicionActual = 0;
+int valorDesplazamiento = 0;
+long posicionActual = 0;
 int posicionDePartida = 0;
-
-// Maquina de estado
-structEvento evento;
 estadoEnum estadoActual;
+Evento evento;
+SensorUltrasonido ultrasonidoHorizontal;
+SensorUltrasonido ultrasonidoVertical;
+PuenteH puenteH;
+LedDigital ledSierra;
+LedDigital ledDesplazamiento;
+
+// ------------------------------------------------
+// Logs
+// ------------------------------------------------
+void log(const char *estado, const char *evento)
+{
+#ifdef LOG
+    Serial.println("------------------------------------------------");
+    Serial.println(estado);
+    Serial.println(evento);
+    Serial.println("------------------------------------------------");
+#endif
+}
+
+void log(const char *msg)
+{
+#ifdef LOG
+    Serial.println(msg);
+#endif
+}
+
+void log(int val)
+{
+#ifdef LOG
+    Serial.println(val);
+#endif
+}
+
+// ------------------------------------------------
+// Firmas de Funciones
+// ------------------------------------------------
+void getEvento();
+void maquinaEstado();
+void ISF();
+void setup();
+void loop();
+void start();
+void leerTiempoDesdeSerie();
+void checkearPosicionMotor(unsigned int pinPulsador);
+void encenderMotorYLedDesplazamiento(unsigned int pinPulsador);
+void detenerMotorYLedDesplazamiento();
+void checkearLongitudDeCorte();
+void encenderMotorYLedSierra();
+void detenerMotorYLedSierra();
+void medirDistanciaUltrasonido(SensorUltrasonido* sensorUltrasonido, unsigned int pinPulsador);
+bool esPulsadorPresionado(unsigned int pinPulsador);
 
 // ------------------------------------------------
 // Captura de eventos
 // ------------------------------------------------
-
 void getEvento()
 {
-    if (esPulsadorPresionado(PULSADOR_IZQ))
+    if (esPulsadorPresionado(PIN_D_PULSADOR_IZQUIERDA))
     {
         evento.tipo = EVENTO_DESPLAZAMIENTO_IZQUIERDA;
     }
-    else if (esPulsadorPresionado(PULSADOR_DER))
+    else if (esPulsadorPresionado(PIN_D_PULSADOR_DERECHA))
     {
         evento.tipo = EVENTO_DESPLAZAMIENTO_DERECHA;
     }
-    else if (esPulsadorPresionado(PULSADOR_SIERRA) && evento.tipo != EVENTO_SIERRA_DETENIDA)
+    else if (esPulsadorPresionado(PIN_D_PULSADOR_SIERRA))
     {
-        evento.tipo = EVENTO_ACTIVACION_SIERRA;
+        if (estadoActual != ESTADO_SIERRA_ACTIVA)
+        {
+            evento.tipo = EVENTO_ACTIVACION_SIERRA;
+        }
+        else if (estadoActual == ESTADO_SIERRA_ACTIVA)
+        {
+            evento.tipo = EVENTO_SIERRA_DETENIDA;
+        }
     }
-    else if(evento.tipo == EVENTO_SIERRA_DETENIDA)
+    /*else
     {
-      evento.tipo = EVENTO_SIERRA_DETENIDA;
-    }
-    else
-    {
-       evento.tipo = EVENTO_CONTINUE;
-    }
+      evento.tipo = EVENTO_CONTINUE;
+    }*/
 }
 
-//----------------------------------------------------
-// Máquina de Estados
-//----------------------------------------------------
-
+// ------------------------------------------------
+// Implementación máquina de estados
+// ------------------------------------------------
 void maquinaEstado()
 {
     getEvento();
@@ -137,40 +213,39 @@ void maquinaEstado()
             switch (evento.tipo)
             {
                 case EVENTO_DESPLAZAMIENTO_IZQUIERDA:
-                {
-                    estadoActual = ESTADO_EN_MOVIMIENTO;
+                    ultrasonidoHorizontal.estado = ULTRASONIDO_EN_MOVIMIENTO;
+                    medirDistanciaUltrasonido(&ultrasonidoHorizontal, PIN_D_PULSADOR_IZQUIERDA);
+                    posicionDePartida = ultrasonidoHorizontal.cm;
+                    encenderMotorYLedDesplazamiento(PIN_D_PULSADOR_IZQUIERDA);
                     Serial.println("Pulsador izquierdo presionado. Desplazando motor a izquierda.");
-                    posicionDePartida = medirDistanciaUltrasonido(TRIGGER_H, ECHO_H, ULTRASONIDO_SIN_MOVIMIENTO, PULSADOR_IZQ);
-                    encenderMotorDesplazamiento(PULSADOR_IZQ);
+                    log("ESTADO_IDLE", "EVENTO_DESPLAZAMIENTO_IZQUIERDA");
                     imprimirMsg = true;
-                    pulsadorPresionado = PULSADOR_IZQ;
-                }
-                break;
-                case EVENTO_DESPLAZAMIENTO_DERECHA:
-                {
                     estadoActual = ESTADO_EN_MOVIMIENTO;
+                    break;
+                case EVENTO_DESPLAZAMIENTO_DERECHA:
+                    ultrasonidoHorizontal.estado = ULTRASONIDO_EN_MOVIMIENTO;
+                    medirDistanciaUltrasonido(&ultrasonidoHorizontal, PIN_D_PULSADOR_DERECHA);
+                    posicionDePartida = ultrasonidoHorizontal.cm;
+                    encenderMotorYLedDesplazamiento(PIN_D_PULSADOR_DERECHA);
                     Serial.println("Pulsador derecho presionado. Desplazando motor a derecha.");
-                    posicionDePartida = medirDistanciaUltrasonido(TRIGGER_H, ECHO_H, ULTRASONIDO_SIN_MOVIMIENTO, PULSADOR_DER);
-                    encenderMotorDesplazamiento(PULSADOR_DER);
+                    log("ESTADO_IDLE", "EVENTO_DESPLAZAMIENTO_DERECHA");
                     imprimirMsg = true;
-                    pulsadorPresionado = PULSADOR_DER;
-                }
-                break;
+                    estadoActual = ESTADO_EN_MOVIMIENTO;
+                    break;
                 case EVENTO_ACTIVACION_SIERRA:
-                {
-                    estadoActual = ESTADO_SIERRA_ACTIVA;
-                    Serial.println("Pulsador sierra presionado. Cortando ...");
-                    posicionDePartida = medirDistanciaUltrasonido(TRIGGER_V, ECHO_V, ULTRASONIDO_SIN_MOVIMIENTO, PULSADOR_SIERRA);
+                    ultrasonidoVertical.estado = ULTRASONIDO_SIN_MOVIMIENTO;
+                    medirDistanciaUltrasonido(&ultrasonidoVertical, PIN_D_PULSADOR_SIERRA);
+                    posicionDePartida = ultrasonidoVertical.cm;
                     encenderMotorYLedSierra();
-                }
+                    Serial.println("Pulsador sierrra encendida. Cortando ...");
+                    log("ESTADO_IDLE", "EVENTO_ACTIVACION_SIERRA");
+                    estadoActual = ESTADO_SIERRA_ACTIVA;
                 break;
-                case EVENTO_CONTINUE:
-                {
-                  estadoActual = ESTADO_IDLE;
-                }
-                break;
+                /*case EVENTO_CONTINUE:
+                    estadoActual = ESTADO_IDLE;
+                    break;*/
                 default:
-                  break;
+                    break;
             }
             break;
         }
@@ -181,85 +256,102 @@ void maquinaEstado()
             switch (evento.tipo)
             {
                 case EVENTO_DESPLAZAMIENTO_IZQUIERDA:
-                {
-                    checkearPosicionMotor(PULSADOR_IZQ);
-                }
-                break;
+                    checkearPosicionMotor(PIN_D_PULSADOR_IZQUIERDA);
+                    log("ESTADO_EN_MOVIMIENTO", "EVENTO_DESPLAZAMIENTO_IZQUIERDA");
+                    estadoActual = ESTADO_EN_MOVIMIENTO;
+                    break;
                 case EVENTO_DESPLAZAMIENTO_DERECHA:
-                {
-                    checkearPosicionMotor(PULSADOR_DER);
-                }
-                break;
-                case EVENTO_CONTINUE:
-                {
-                  estadoActual = ESTADO_EN_MOVIMIENTO;
-                }
-                break;
+                    checkearPosicionMotor(PIN_D_PULSADOR_DERECHA);
+                    log("ESTADO_EN_MOVIMIENTO", "EVENTO_DESPLAZAMIENTO_DERECHA");
+                    estadoActual = ESTADO_EN_MOVIMIENTO;
+                    break;
+                case EVENTO_POSICION_FINALIZADA:
+                    detenerMotorYLedDesplazamiento();
+                    Serial.println("Posicionamiento finalizado.");
+                    valorDesplazamiento = 0;
+                    log("ESTADO_EN_MOVIMIENTO", "EVENTO_POSICION_FINALIZADA");
+                    estadoActual = ESTADO_IDLE;
+                    break;
+                case EVENTO_UMBRAL_HORIZONTAL_SUPERADO:
+                    detenerMotorYLedDesplazamiento();
+                    Serial.println("Se quiere desplazar mas que el umbral maximo. Motor de desplazamiento apagandose ...");
+                    valorDesplazamiento = 0;
+                    log("ESTADO_EN_MOVIMIENTO", "EVENTO_UMBRAL_HORIZONTAL_SUPERADO");
+                    estadoActual = ESTADO_IDLE;
+                    break;
+                /*case EVENTO_CONTINUE:
+                    log("ESTADO_EN_MOVIMIENTO", "EVENTO_CONTINUE");
+                    estadoActual = ESTADO_EN_MOVIMIENTO;
+                    break;*/
                 default:
-                break;
+                    break;
             }
             break;
         }
         break;
+
         case ESTADO_SIERRA_ACTIVA:
         {
             switch (evento.tipo)
             {
                 case EVENTO_ACTIVACION_SIERRA:
-                {
-                  checkearLongitudDeCorte();
-                }
-                break;
+                    checkearLongitudDeCorte();
+                    log("ESTADO_SIERRA_ACTIVA", "EVENTO_ACTIVACION_SIERRA");
+                    estadoActual = ESTADO_SIERRA_ACTIVA;
+                    break;
                 case EVENTO_SIERRA_DETENIDA:
-                {
-                  detenerMotorYLedSierra();
-                  estadoActual = ESTADO_IDLE;
-                }
-                break;
-                case EVENTO_CONTINUE:
-                {
-                  estadoActual = ESTADO_SIERRA_ACTIVA;
-                }
-                break;
+                    detenerMotorYLedSierra();
+                    Serial.println("Deteniendo el motor sierra ...");
+                    log("ESTADO_SIERRA_ACTIVA", "EVENTO_SIERRA_DETENIDA");
+                    estadoActual = ESTADO_IDLE;
+                    break;
+                case EVENTO_UMBRAL_VERTICAL_SUPERADO:
+                    detenerMotorYLedSierra();
+                    Serial.println("Pase el umbral minimo o presione el boton. Motor de sierra apagandose ...");
+                    log("ESTADO_SIERRA_ACTIVA", "EVENTO_UMBRAL_VERTICAL_SUPERADO");
+                    estadoActual = ESTADO_IDLE;
+                    break;
+                /*case EVENTO_CONTINUE:
+                    log("ESTADO_SIERRA_ACTIVA", "EVENTO_CONTINUE");
+                    estadoActual = ESTADO_SIERRA_ACTIVA;
+                    break;*/
                 default:
-                break;
+                    break;
             }
             break;
         }
         break;
     }
-    evento.tipo = EVENTO_CONTINUE;
-    evento.valor = VALOR_CONTINUE;
+    
+    // Ya se atendió el evento
+    /*evento.tipo = EVENTO_CONTINUE;
+    evento.valor = VALOR_CONTINUE;*/
 }
 
 //----------------------------------------------------
 // Interrupciones
 //----------------------------------------------------
-
 void ISF()
 {
-    Serial.println("Interrupcion detectada, sierra apagada.");
     if (estadoActual == ESTADO_SIERRA_ACTIVA)
     {
+        Serial.println("Interrupcion detectada, sierra apagada.");
         evento.tipo = EVENTO_SIERRA_DETENIDA;
-        //detachInterrupt(digitalPinToInterrupt(PULSADOR_SIERRA));
     }
 }
 
 //----------------------------------------------------
 // Arduino Setup
 //-----------------------------------------------
-
 void setup()
 {
-    inicializarHardware();
-    attachInterrupt(digitalPinToInterrupt(PULSADOR_SIERRA), ISF, MODO_PIN_SIERRA);
+    start();
+    attachInterrupt(digitalPinToInterrupt(PIN_D_PULSADOR_SIERRA), ISF, MODO_PIN_SIERRA);
 }
 
 //----------------------------------------------------
 // Arduino Loop
 //----------------------------------------------------
-
 void loop()
 {
     maquinaEstado();
@@ -268,39 +360,51 @@ void loop()
 //----------------------------------------------------
 // Inicialización
 //----------------------------------------------------
-
-void inicializarHardware()
+void start()
 {
     // Monitor Serial
     Serial.begin(BAUD_RATE);
 
     // Relé
-    pinMode(RELE, OUTPUT);
+    pinMode(PIN_D_RELE, OUTPUT);
 
     // Puente H
-    pinMode(PM_SPEED, OUTPUT);
-    pinMode(M_T1, OUTPUT);
-    pinMode(M_T2, OUTPUT);
+    puenteH.pinTerminal1 = PIN_D_MDC_T1;
+    puenteH.pinTerminal2 = PIN_D_MDC_T2;
+    puenteH.pinVelocidad = PIN_P_MDC_SPEED;
+    pinMode(puenteH.pinTerminal1, OUTPUT);
+    pinMode(puenteH.pinTerminal2, OUTPUT);
+    pinMode(puenteH.pinVelocidad, OUTPUT);
 
     // Pulsadores
-    pinMode(PULSADOR_IZQ, INPUT);
-    pinMode(PULSADOR_DER, INPUT);
-    pinMode(PULSADOR_SIERRA, INPUT);
+    pinMode(PIN_D_PULSADOR_IZQUIERDA, INPUT);
+    pinMode(PIN_D_PULSADOR_DERECHA, INPUT);
+    pinMode(PIN_D_PULSADOR_SIERRA, INPUT);
 
     // LEDs
-    pinMode(LED_SIERRA, OUTPUT);
-    pinMode(LED_DESPLAZAMIENTO, OUTPUT);
+    ledSierra.pin = PIN_D_LED_SIERRA;
+    ledDesplazamiento.pin = PIN_D_LED_DESPLAZAMIENTO;
+    ledSierra.encendido = false;
+    ledSierra.encendido = false;
+    pinMode(ledSierra.pin, OUTPUT);
+    pinMode(ledDesplazamiento.pin, OUTPUT);
 
     // Sensor Ultrasonido Horizontal
-    pinMode(TRIGGER_H, OUTPUT);
-    pinMode(ECHO_H, INPUT);
+    ultrasonidoHorizontal.pinTrigger = PIN_D_TRIGGER_H;
+    ultrasonidoHorizontal.pinEcho = PIN_D_ECHO_H;
+    ultrasonidoHorizontal.estado = ULTRASONIDO_SIN_MOVIMIENTO;
+    pinMode(ultrasonidoHorizontal.pinTrigger, OUTPUT);
+    pinMode(ultrasonidoHorizontal.pinEcho, INPUT);
 
     // Sensor Ultrasonido Vertical
-    pinMode(TRIGGER_V, OUTPUT);
-    pinMode(ECHO_V, INPUT);
+    ultrasonidoVertical.pinTrigger = PIN_D_TRIGGER_V;
+    ultrasonidoVertical.pinEcho = PIN_D_ECHO_V;
+    ultrasonidoVertical.estado = ULTRASONIDO_SIN_MOVIMIENTO;
+    pinMode(PIN_D_TRIGGER_V, OUTPUT);
+    pinMode(PIN_D_ECHO_V, INPUT);
 
     // Inicializar motores
-    detenerMotorDesplazamiento();
+    detenerMotorYLedDesplazamiento();
     detenerMotorYLedSierra();
 
     // Inicalizar estado embebido
@@ -308,9 +412,8 @@ void inicializarHardware()
 }
 
 //----------------------------------------------------
-// Funciones Motor Desplazamiento
+// Funcionalidades del Motor Desplazamiento
 //----------------------------------------------------
-
 void leerTiempoDesdeSerie()
 {
     if (imprimirMsg)
@@ -336,108 +439,103 @@ void leerTiempoDesdeSerie()
 
 void checkearPosicionMotor(unsigned int pinPulsador)
 {
-    posicionActual = medirDistanciaUltrasonido(TRIGGER_H, ECHO_H, ULTRASONIDO_EN_MOVIMIENTO, pinPulsador);
+    medirDistanciaUltrasonido(&ultrasonidoHorizontal, pinPulsador);
+    posicionActual = ultrasonidoHorizontal.cm;
     Serial.println("Posicion actual ULT H: " + String(posicionActual) + " CM.");
-    int posibleDesplazamiento = posicionActual + (pinPulsador == PULSADOR_IZQ ? -valorDesplazamiento : valorDesplazamiento);
-    if (posibleDesplazamiento >= DISTANCIA_MAXIMA_H)
+    // SE DEBE CALCULAR EN OTRO LADO, QUIZAS NI BIEN APRETADO EL BOTON PARA DONDE SE QUIERA CORRER
+    //int posibleDesplazamiento = posicionActual + (pinPulsador == PIN_D_PULSADOR_IZQUIERDA ? -valorDesplazamiento : valorDesplazamiento);
+    if (posicionActual >= DISTANCIA_MAXIMA_H)
     {
-        detenerMotorDesplazamiento();
-        Serial.println("Se quiere desplazar mas que el umbral maximo. Motor de desplazamiento apagandose ...");
-        estadoActual = ESTADO_IDLE;
         evento.tipo = EVENTO_UMBRAL_HORIZONTAL_SUPERADO;
     }
     else
     {
         int delta = abs(posicionActual - posicionDePartida);
         if (delta >= valorDesplazamiento)
-        {
-            detenerMotorDesplazamiento();
-            Serial.println("Posicionamiento finalizado.");
-            estadoActual = ESTADO_IDLE;
+        {  
             evento.tipo = EVENTO_POSICION_FINALIZADA;
+            return;
         }
         Serial.println("El motor se desplazo horizontalmente hacia la " +
-          String(pinPulsador == PULSADOR_IZQ ? "izquierda" : "derecha") + " unos " +
+          String(pinPulsador == PIN_D_PULSADOR_IZQUIERDA ? "izquierda" : "derecha") + " unos " +
           String(delta) + " CM de " + String(valorDesplazamiento) + " CM.");
     }
 }
 
-void encenderMotorDesplazamiento(unsigned int pinPulsador)
+void encenderMotorYLedDesplazamiento(unsigned int pinPulsador)
 {
-    if (pinPulsador == PULSADOR_IZQ)
+    if (pinPulsador == PIN_D_PULSADOR_IZQUIERDA)
     {
-        analogWrite(PM_SPEED, MOTOR_SPEED);
-        digitalWrite(M_T1, HIGH);
-        digitalWrite(M_T2, LOW);
-        digitalWrite(LED_DESPLAZAMIENTO, HIGH);
+        analogWrite(puenteH.pinVelocidad, MOTOR_SPEED);
+        digitalWrite(puenteH.pinTerminal1, HIGH);
+        digitalWrite(puenteH.pinTerminal2, LOW);
+        digitalWrite(ledDesplazamiento.pin, HIGH);
+        ledDesplazamiento.encendido = true;
     }
-    else if (pinPulsador == PULSADOR_DER)
+    else if (pinPulsador == PIN_D_PULSADOR_DERECHA)
     {
-        analogWrite(PM_SPEED, MOTOR_SPEED);
-        digitalWrite(M_T1, LOW);
-        digitalWrite(M_T2, HIGH);
-        digitalWrite(LED_DESPLAZAMIENTO, HIGH);
+        analogWrite(puenteH.pinVelocidad, MOTOR_SPEED);
+        digitalWrite(puenteH.pinTerminal1, LOW);
+        digitalWrite(puenteH.pinTerminal2, HIGH);
+        digitalWrite(ledDesplazamiento.pin, HIGH);
+        ledDesplazamiento.encendido = true;
     }
 }
 
-void detenerMotorDesplazamiento()
+void detenerMotorYLedDesplazamiento()
 {
-    analogWrite(PM_SPEED, 0);
-    digitalWrite(M_T1, LOW);
-    digitalWrite(M_T2, LOW);
-    digitalWrite(LED_DESPLAZAMIENTO, LOW);
-    valorDesplazamiento = 0;  // Limpiar la variable desplazamiento
-    Serial.println("Deteniendo el motor desplazamiento");
+    analogWrite(puenteH.pinVelocidad, 0);
+    digitalWrite(puenteH.pinTerminal1, LOW);
+    digitalWrite(puenteH.pinTerminal2, LOW);
+    digitalWrite(ledDesplazamiento.pin, LOW);
+    ledDesplazamiento.encendido = false;
 }
 
 //----------------------------------------------------
-// Funciones Motor Sierra
+// Funcionalidades del Motor Sierra
 //----------------------------------------------------
-
 void checkearLongitudDeCorte()
 {
-    posicionActual = medirDistanciaUltrasonido(TRIGGER_V, ECHO_V, ULTRASONIDO_SIN_MOVIMIENTO, PULSADOR_SIERRA);
+    medirDistanciaUltrasonido(&ultrasonidoVertical, PIN_D_PULSADOR_SIERRA);
+    posicionActual = ultrasonidoVertical.cm;
     Serial.println("Posicion actual ULT V: " + String(posicionActual) + " CM.");
-    if (posicionActual <= DISTANCIA_MINIMA_V)  // esPulsadorPresionado(PULSADOR_SIERRA) ||
+    if (posicionActual <= DISTANCIA_MINIMA_V)  // esPulsadorPresionado(PIN_D_PULSADOR_SIERRA) ||
     {
-        Serial.println("Pase el umbral minimo o presione el boton. Motor de sierra apagandose ...");
-        detenerMotorYLedSierra();
-        estadoActual = ESTADO_IDLE;
         evento.tipo = EVENTO_UMBRAL_VERTICAL_SUPERADO;
     }
 }
 
 void encenderMotorYLedSierra()
 {
-    digitalWrite(RELE, HIGH);
-    digitalWrite(LED_SIERRA, HIGH);
+    digitalWrite(PIN_D_RELE, HIGH);
+    digitalWrite(ledSierra.pin, HIGH);
+    ledSierra.encendido = true;
 }
 
 void detenerMotorYLedSierra()
 {
-    digitalWrite(RELE, LOW);
-    digitalWrite(LED_SIERRA, LOW);
-    Serial.println("Deteniendo el motor sierra");
+    digitalWrite(PIN_D_RELE, LOW);
+    digitalWrite(ledSierra.pin, LOW);
+    ledSierra.encendido = false;
 }
 
 //----------------------------------------------------
 // Otras Funcionalidades
 //----------------------------------------------------
-
-unsigned long medirDistanciaUltrasonido(unsigned int triggerPin, unsigned int echoPin, bool estaEnMovimiento, unsigned int pinPulsador)
+void medirDistanciaUltrasonido(SensorUltrasonido* sensorUltrasonido, unsigned int pinPulsador)
 {
-    digitalWrite(triggerPin, LOW);
+    digitalWrite(sensorUltrasonido->pinTrigger, LOW);
     delayMicroseconds(2);
-    digitalWrite(triggerPin, HIGH);
+    digitalWrite(sensorUltrasonido->pinTrigger, HIGH);
     delayMicroseconds(10);
-    digitalWrite(triggerPin, LOW);
-    unsigned long duracion = pulseIn(echoPin, HIGH);
-    if (estaEnMovimiento || pinPulsador != PULSADOR_SIERRA)
+    digitalWrite(sensorUltrasonido->pinTrigger, LOW);
+    unsigned long tiempoPulso = pulseIn(sensorUltrasonido->pinEcho, HIGH);
+    if (sensorUltrasonido->estado == ULTRASONIDO_EN_MOVIMIENTO || pinPulsador != PIN_D_PULSADOR_SIERRA)
     {
-        duracion += pinPulsador == PULSADOR_IZQ ? MARGEN_DE_ERROR : -MARGEN_DE_ERROR;
+        tiempoPulso += pinPulsador == PIN_D_PULSADOR_IZQUIERDA ? MARGEN_DE_ERROR : - MARGEN_DE_ERROR;
     }
-    unsigned long distanciaCm = duracion / CONST_VELOCIDAD_SONIDO;
-    return distanciaCm;
+    unsigned long distanciaCm = tiempoPulso / VELOCIDAD_DEL_SONIDO;
+    sensorUltrasonido->cm = distanciaCm;
 }
 
 bool esPulsadorPresionado(unsigned int pinPulsador)
