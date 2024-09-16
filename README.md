@@ -10,7 +10,7 @@ Repositorio dedicado al proyecto IoT mediante Arduino y Android.
 * **Año académico**: Cuarto año
 * **Carga horaria semanal**: 4 hs
 * **Carga horaria total**: 64 hs
-* **Modalidad**: Semipresencial
+* **Modalidad**: Presencial
 * **Correlativa anterior**: Virtualización de Hardware (3654)
 
 ## Integrantes
