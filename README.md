@@ -1,5 +1,5 @@
 # Smart Saw
-Este repositorio esta dedicado a un proyecto IoT mediante Arduino y Android.
+Repositorio dedicado al proyecto IoT mediante Arduino y Android.
 
 ## Información de la Asignatura
 * **Materia**: Sistemas Operativos Avanzados (3660)
