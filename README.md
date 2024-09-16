@@ -24,4 +24,4 @@ Repositorio dedicado al proyecto IoT mediante Arduino y Android.
 * Esteban, Carnuccio
 * Hirschfeldt, Dario
 * Peliza, Carlos Horacio
-* Volker Mariano Leonardo
+* Volker, Mariano Leonardo
