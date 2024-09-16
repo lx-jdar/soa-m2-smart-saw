@@ -7,11 +7,11 @@ Este repositorio esta dedicado a un proyecto IoT mediante Arduino y Android.
 * **Año**: 2024
 
 ## Trayecto Infraestructura
-* **Año Académico**: Tercero - Segundo Cuatrimestre
-* **Carga Horaria Semanal**: 4 hs
-* **Carga Horaria Total**: 64 hs
+* **Año académico**: Tercero - Segundo Cuatrimestre
+* **Carga horaria semanal**: 4 hs
+* **Carga horaria total**: 64 hs
 * **Modalidad**: Semipresencial
-* **Correlativa Anterior**: Virtualización de Hardware (3654)
+* **Correlativa anterior**: Virtualización de Hardware (3654)
 
 ## Integrantes
 * Rodriguez, Mariano Lionel
