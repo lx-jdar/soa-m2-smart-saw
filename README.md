@@ -7,7 +7,7 @@ Repositorio dedicado al proyecto IoT mediante Arduino y Android.
 * **Año**: 2024
 
 ## Trayecto Infraestructura
-* **Año académico**: Tercero - Segundo Cuatrimestre
+* **Año académico**: Cuarto Año
 * **Carga horaria semanal**: 4 hs
 * **Carga horaria total**: 64 hs
 * **Modalidad**: Semipresencial
