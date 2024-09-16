@@ -6,7 +6,7 @@ Este repositorio esta dedicado a un proyecto IoT mediante Arduino y Android.
 * **Cuatrimestre**: Segundo Cuatrimestre
 * **Año**: 2024
 
-## Trayecto Infraestructura :school:
+## Trayecto Infraestructura
 * **Año Académico**: Tercero - Segundo Cuatrimestre
 * **Carga Horaria Semanal**: 4 hs
 * **Carga Horaria Total**: 64 hs
