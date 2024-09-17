@@ -176,7 +176,7 @@ void log(const char *estado, const char *evento)
 #endif
 }
 
-void log(const char *msg)
+void log(String msg)
 {
 #ifdef LOG
     Serial.println(msg);
@@ -424,7 +424,7 @@ void ISF()
 {
     if (estadoActual == ESTADO_EMBEBIDO_SIERRA_ACTIVA)
     {
-        Serial.println("Interrupcion detectada, sierra apagada.");
+        log("Interrupcion detectada, sierra apagada.");
         evento.tipo = EVENTO_SIERRA_DETENIDA;
     }
 }
@@ -476,7 +476,6 @@ void start()
     ledSierra.pin = PIN_D_LED_SIERRA;
     ledDesplazamiento.pin = PIN_D_LED_DESPLAZAMIENTO;
     ledSierra.encendido = false;
-    ledSierra.encendido = false;
     pinMode(ledSierra.pin, OUTPUT);
     pinMode(ledDesplazamiento.pin, OUTPUT);
 
@@ -508,6 +507,7 @@ void start()
 void inicializarMonitor(Monitor* monitor)
 {
     monitor->configuracion = BAUD_RATE;
+  	Serial.begin(monitor->configuracion);
 }
 
 void verificarLecturaDesdeMonitorSerial()
@@ -599,7 +599,7 @@ void verificarPosicionUltrasonidoHorizontal()
         {
             actualizarUltrasonido(&ultrasonidoHorizontal);
             posicionActual = ultrasonidoHorizontal.cm;
-            Serial.println("Posicion actual Ultrasonido Horizontal: " + String(posicionActual) + " CM.");
+            log("Posicion actual Ultrasonido Horizontal: " + String(posicionActual) + " CM.");
             if (posicionActual >= DISTANCIA_MAXIMA_H)
             {
                 evento.tipo = EVENTO_LIMITE_HORIZONTAL_SUPERADO;
@@ -612,9 +612,9 @@ void verificarPosicionUltrasonidoHorizontal()
                     ultrasonidoHorizontal.estado = ESTADO_ULT_DETENIDO;
                     return;
                 }
-                Serial.println("El motor se desplazo horizontalmente hacia la " +
-                    String(evento.tipo == EVENTO_DESPLAZAMIENTO_IZQUIERDA? "izquierda" : "derecha") + " unos " +
-                    String(delta) + " CM de " + String(valorDesplazamiento) + " CM.");
+                log("El motor se desplazo horizontalmente hacia la " +
+                String(evento.tipo == EVENTO_DESPLAZAMIENTO_IZQUIERDA? "izquierda" : "derecha") + " unos " +
+                String(delta) + " CM de " + String(valorDesplazamiento) + " CM.");
             }
             break;
         }
@@ -634,7 +634,7 @@ void verificarPosicionUltrasonidoVertical()
 {
     actualizarUltrasonido (&ultrasonidoVertical);
     posicionActual = ultrasonidoVertical.cm;
-    Serial.println("Posicion actual ULT V: " + String(posicionActual) + " CM.");
+    log("Posicion actual ULT V: " + String(posicionActual) + " CM.");
     if (posicionActual <= DISTANCIA_MINIMA_V)
     {
         evento.tipo = EVENTO_LIMITE_VERTICAL_SUPERADO;
