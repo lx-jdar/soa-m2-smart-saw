@@ -78,7 +78,7 @@ enum estadoSensorUltrasonidoEnum
     ESTADO_ULT_EN_MOVIMIENTO,
     ESTADO_ULT_DETENIDO,
     ESTADO_ULT_UMBRAL_SUPERADO,
-    ESTADO_ULT_LONGITUD_PERMITIDA
+    ESTADO_ULT_LONGITUD_PERMITIDA	// Estado unicamente para el ULT vertical
 };
 
 // ------------------------------------------------
@@ -118,6 +118,7 @@ typedef struct
     estadoSensorUltrasonidoEnum estado;
     int sentido;
     unsigned long cm;
+    unsigned long posicionPartida;
 } SensorUltrasonido;
 
 // ------------------------------------------------
@@ -152,7 +153,7 @@ typedef struct
 // ------------------------------------------------
 int valorDesplazamiento = 0;
 long posicionActual = 0;
-int posicionDePartida = 0;
+long posicionDePartida = 0;
 int entradaActual = 0;
 estadoEnum estadoActual;
 Evento evento;
@@ -274,6 +275,7 @@ void maquinaEstado()
                     monitor.mensaje = "El valor ingresado " + String(valorDesplazamiento) + " supera los limites establecidos del desplazamiento.";
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
                     estadoActual = ESTADO_EMBEBIDO_IDLE;
+                    evento.tipo = EVENTO_CONTINUE;
                     break;
                 }
 
@@ -298,9 +300,9 @@ void maquinaEstado()
                     break;
                 }
 
-                /*case EVENTO_CONTINUE:
+                case EVENTO_CONTINUE:
                     estadoActual = ESTADO_EMBEBIDO_IDLE;
-                    break;*/
+                    break;
 
                 default:
                     break;
@@ -315,6 +317,7 @@ void maquinaEstado()
             {
                 case EVENTO_DESPLAZAMIENTO_IZQUIERDA:
                 {
+                    
                     encenderMotorYLedDesplazamiento(PIN_D_PULSADOR_IZQUIERDA);
                     monitor.mensaje = "Pulsador izquierdo presionado. Desplazando motor a izquierda.";
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -426,6 +429,7 @@ void ISF()
     {
         log("Interrupcion detectada, sierra apagada.");
         evento.tipo = EVENTO_SIERRA_DETENIDA;
+		ultrasonidoVertical.estado = ESTADO_ULT_DETENIDO;
     }
 }
 
@@ -565,8 +569,8 @@ void verificarPulsadores()
     }
     else if (pulsadorSierraPresionado)
     {
-        evento.tipo = EVENTO_ACTIVACION_SIERRA;
-        ultrasonidoVertical.estado = ESTADO_ULT_LONGITUD_PERMITIDA;
+		evento.tipo = EVENTO_ACTIVACION_SIERRA;
+		ultrasonidoVertical.estado = ESTADO_ULT_LONGITUD_PERMITIDA;
     }
 }
 
@@ -575,9 +579,9 @@ void verificarLimitesHorizontales()
     if(valorDesplazamiento)
     {
         actualizarUltrasonido(&ultrasonidoHorizontal);
-        posicionActual = ultrasonidoHorizontal.cm;
+        posicionActual = ultrasonidoHorizontal.posicionPartida;
         int posibleDesplazamiento = posicionActual + (ultrasonidoHorizontal.sentido == DESPLAZAMIENTO_IZQUIERDA ? valorDesplazamiento : - valorDesplazamiento);
-        if (posibleDesplazamiento <= DISTANCIA_MINIMA_H || posibleDesplazamiento >= DISTANCIA_MAXIMA_H)
+        if ((posibleDesplazamiento <= DISTANCIA_MINIMA_H || posibleDesplazamiento >= DISTANCIA_MAXIMA_H) && ultrasonidoHorizontal.estado==ESTADO_ULT_EN_MOVIMIENTO)
         {
             ultrasonidoHorizontal.estado = ESTADO_ULT_UMBRAL_SUPERADO;
         }
@@ -587,26 +591,35 @@ void verificarLimitesHorizontales()
 void verificarPosicionUltrasonidoHorizontal()
 {
     verificarLimitesHorizontales();
+    actualizarUltrasonido(&ultrasonidoHorizontal);
     switch (ultrasonidoHorizontal.estado)
     {
         case ESTADO_ULT_UMBRAL_SUPERADO:
         {
-            evento.tipo = EVENTO_LIMITE_HORIZONTAL_SUPERADO;
+			ultrasonidoHorizontal.estado = ESTADO_ULT_DETENIDO;
+			if(estadoActual == ESTADO_EMBEBIDO_EN_MOVIMIENTO)
+			{
+				evento.tipo = EVENTO_LIMITE_HORIZONTAL_SUPERADO;
+			}
             break;
         }
         
         case ESTADO_ULT_EN_MOVIMIENTO:
         {
-            actualizarUltrasonido(&ultrasonidoHorizontal);
             posicionActual = ultrasonidoHorizontal.cm;
             log("Posicion actual Ultrasonido Horizontal: " + String(posicionActual) + " CM.");
             if (posicionActual >= DISTANCIA_MAXIMA_H)
             {
-                evento.tipo = EVENTO_LIMITE_HORIZONTAL_SUPERADO;
+				ultrasonidoVertical.estado = ESTADO_ULT_DETENIDO;
+				if(estadoActual == ESTADO_EMBEBIDO_EN_MOVIMIENTO)
+				{
+					evento.tipo = EVENTO_LIMITE_HORIZONTAL_SUPERADO;
+				}
             }
             else
             {
-                int delta = abs(posicionActual - posicionDePartida);
+                int delta = abs(posicionActual - ultrasonidoHorizontal.posicionPartida);
+				delta *= delta < 0? -1 : 1;		// Modificar
                 if (delta >= valorDesplazamiento)
                 {  
                     ultrasonidoHorizontal.estado = ESTADO_ULT_DETENIDO;
@@ -621,10 +634,14 @@ void verificarPosicionUltrasonidoHorizontal()
         
         case ESTADO_ULT_DETENIDO:
         {
-            evento.tipo = EVENTO_POSICION_FINALIZADA;
+            ultrasonidoHorizontal.posicionPartida = ultrasonidoHorizontal.cm;
+            if(estadoActual == ESTADO_EMBEBIDO_EN_MOVIMIENTO)
+            {
+            	evento.tipo = EVENTO_POSICION_FINALIZADA;
+            }
             break;
         }
-        
+     
         default:
             break;
     }
@@ -633,6 +650,38 @@ void verificarPosicionUltrasonidoHorizontal()
 void verificarPosicionUltrasonidoVertical()
 {
     actualizarUltrasonido (&ultrasonidoVertical);
+    switch (ultrasonidoVertical.estado)
+	{
+		case ESTADO_ULT_DETENIDO:
+		{
+			if(estadoActual == ESTADO_EMBEBIDO_SIERRA_ACTIVA)
+            {
+				evento.tipo = EVENTO_CONTINUE;
+            }
+			break;
+		}
+
+		case ESTADO_ULT_LONGITUD_PERMITIDA:
+		{
+			posicionActual = ultrasonidoVertical.cm;
+			Serial.println("Posicion actual ULT V: " + String(posicionActual) + " CM.");
+			if (posicionActual <= DISTANCIA_MINIMA_V)
+			{
+				ultrasonidoVertical.estado = ESTADO_ULT_UMBRAL_SUPERADO;
+			}
+			break;
+		}
+		
+		case ESTADO_ULT_UMBRAL_SUPERADO:
+		{
+			ultrasonidoVertical.estado = ESTADO_ULT_DETENIDO;
+			evento.tipo = EVENTO_LIMITE_VERTICAL_SUPERADO;
+			break;
+		}
+			
+		default:
+			break;
+	}
     posicionActual = ultrasonidoVertical.cm;
     log("Posicion actual ULT V: " + String(posicionActual) + " CM.");
     if (posicionActual <= DISTANCIA_MINIMA_V)
@@ -668,19 +717,26 @@ bool esPulsadorPresionado(unsigned int pinPulsador)
 //----------------------------------------------------
 void encenderMotorYLedDesplazamiento(unsigned int pinPulsador)
 {
-    analogWrite(puenteH.pinVelocidad, MOTOR_SPEED);
-    if (pinPulsador == PIN_D_PULSADOR_IZQUIERDA)
+  	if(puenteH.estado==ESTADO_PUENTE_H_APAGADO)
     {
-        digitalWrite(puenteH.pinTerminal1, HIGH);
-        digitalWrite(puenteH.pinTerminal2, LOW);
+      
+      puenteH.estado=ESTADO_PUENTE_H_PRENDIDO;
+      analogWrite(puenteH.pinVelocidad, MOTOR_SPEED);
+      if (pinPulsador == PIN_D_PULSADOR_IZQUIERDA)
+      {
+          digitalWrite(puenteH.pinTerminal1, HIGH);
+          digitalWrite(puenteH.pinTerminal2, LOW);
+      }
+      else if (pinPulsador == PIN_D_PULSADOR_DERECHA)
+      {
+          digitalWrite(puenteH.pinTerminal1, LOW);
+          digitalWrite(puenteH.pinTerminal2, HIGH);
+      }
+      digitalWrite(ledDesplazamiento.pin, HIGH);
+      ledDesplazamiento.encendido = true;
+    
     }
-    else if (pinPulsador == PIN_D_PULSADOR_DERECHA)
-    {
-        digitalWrite(puenteH.pinTerminal1, LOW);
-        digitalWrite(puenteH.pinTerminal2, HIGH);
-    }
-    digitalWrite(ledDesplazamiento.pin, HIGH);
-    ledDesplazamiento.encendido = true;
+   
 }
 
 void detenerMotorYLedDesplazamiento()
