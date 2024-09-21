@@ -376,7 +376,7 @@ void maquinaEstado()
                 case EVENTO_ACTIVACION_SIERRA:
                 {
                     encenderMotorYLedSierra();
-                    monitor.mensaje = "Pulsador sierrra encendida. Cortando ...";
+                    monitor.mensaje = "Pulsador SIERRA encendida. Cortando ...";
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_ACTIVACION_SIERRA");
                     estadoActual = ESTADO_EMBEBIDO_SIERRA_ACTIVA;

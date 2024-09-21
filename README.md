@@ -1,4 +1,4 @@
-# soa-m2-smart-saw
+# Smart SAW
 Repositorio dedicado al proyecto IoT mediante Arduino y Android.
 
 ## Información de la Asignatura
