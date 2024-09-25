@@ -1,7 +1,7 @@
 // ------------------------------------------------
 // Etiquetas
 // ------------------------------------------------
-#define LOG // Comentar esta linea para desactivar logs
+//#define LOG // Comentar esta linea para desactivar logs
 
 // ------------------------------------------------
 // Constantes
@@ -29,6 +29,15 @@ enum estadoEnum
 {
     ESTADO_EMBEBIDO_IDLE,
     ESTADO_EMBEBIDO_SIERRA_ACTIVA
+};
+
+// ------------------------------------------------
+// Estados del Pulsador
+// ------------------------------------------------
+enum estadoPulsadorEnum
+{
+    ACTIVAR_SIERRA,
+    DETENER_SIERRA
 };
 
 // ------------------------------------------------
@@ -79,6 +88,10 @@ estadoEnum estadoEmbebido;
 Evento evento;
 MotorSierra motorSierra;
 LedDigital ledSierra;
+bool pulsadorSierraActivado = false;
+estadoPulsadorEnum estadoPulsador = ACTIVAR_SIERRA;
+long startTime = 0;
+const int timeThreshold = 150;
 
 // ------------------------------------------------
 // Logs
@@ -112,8 +125,8 @@ void log(int val)
 // ------------------------------------------------
 void setup();
 void start();
-void inicializarLedDigital(LedDigital* ledDigital, int pin);
 void inicializarMotorSierra(MotorSierra* motorSierra, int pinRele);
+void inicializarLedDigital(LedDigital* ledDigital, int pin);
 void inicializarPulsadores();
 void loop();
 void obtenerEvento();
@@ -128,14 +141,14 @@ bool esPulsadorPresionado(unsigned int pinPulsador);
 // Captura de eventos
 // ------------------------------------------------
 void (*verificarEntradas[CANTIDAD_MAXIMA_DE_ENTRADAS])() =
-{ 
+{
     verificarPulsadores
 };
 
 void obtenerEvento()
 {
     verificarEntradas[entradaActual]();
-    entradaActual = entradaActual < CANTIDAD_MAXIMA_DE_ENTRADAS - 1? entradaActual + 1 : 0; 
+    entradaActual = (entradaActual < CANTIDAD_MAXIMA_DE_ENTRADAS - 1) ? entradaActual + 1 : 0;
 }
 
 // ------------------------------------------------
@@ -153,6 +166,7 @@ void maquinaEstado()
                 case EVENTO_ACTIVACION_SIERRA:
                 {
                     log("ESTADO_EMBEBIDO_IDLE", "EVENTO_ACTIVACION_SIERRA");
+                    encenderMotorYLedSierra();
                     estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
                     break;
                 }
@@ -175,32 +189,21 @@ void maquinaEstado()
         {
             switch (evento.tipo)
             {
-                case EVENTO_ACTIVACION_SIERRA:
-                {
-                    log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_ACTIVACION_SIERRA");
-                    encenderMotorYLedSierra();
-                    estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
-                    break;
-                }
-                
                 case EVENTO_SIERRA_DETENIDA:
                 {
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_SIERRA_DETENIDA");
                     detenerMotorYLedSierra();
-                    detachInterrupt(digitalPinToInterrupt(PIN_D_PULSADOR_SIERRA));
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
                     break;
                 }
-                
-                case EVENTO_CONTINUE:
-                {
-                    log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_CONTINUE");
-                    estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
-                    break;
-                }
 
-                default:
-                    break;
+                case EVENTO_CONTINUE:
+					log("ESTADO_EMBEBIDO_IDLE", "EVENTO_CONTINUE");
+					estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
+					break;
+
+				default:
+					break;
             }
             break;
         }
@@ -209,12 +212,9 @@ void maquinaEstado()
         default:
             break;
     }
-    
-    // Ya se atendió el evento (Solo sobrescribe el evento si no es EVENTO_SIERRA_DETENIDA ya que es una interrupcion)
-    if (evento.tipo != EVENTO_SIERRA_DETENIDA) {
-        evento.tipo = EVENTO_CONTINUE;
-        evento.valor = VALOR_CONTINUE;
-    }
+
+    evento.tipo = EVENTO_CONTINUE;
+    evento.valor = VALOR_CONTINUE;
 }
 
 //----------------------------------------------------
@@ -222,10 +222,10 @@ void maquinaEstado()
 //----------------------------------------------------
 void ISR_Boton()
 {
-    if (estadoEmbebido == ESTADO_EMBEBIDO_SIERRA_ACTIVA && motorSierra.estado == ESTADO_MOTOR_PRENDIDO)
+    if (millis() - startTime > timeThreshold)
     {
-        log("Interrupcion detectada, sierra apagada.");
-        evento.tipo = EVENTO_SIERRA_DETENIDA;
+        pulsadorSierraActivado = true;
+        startTime = millis();
     }
 }
 
@@ -235,6 +235,7 @@ void ISR_Boton()
 void setup()
 {
     start();
+  	attachInterrupt(digitalPinToInterrupt(PIN_D_PULSADOR_SIERRA), ISR_Boton, MODO_PIN_SIERRA);
 }
 
 //----------------------------------------------------
@@ -270,8 +271,8 @@ void inicializarPulsadores()
 void start()
 {
     Serial.begin(BAUD_RATE);
-	inicializarLedDigital(&ledSierra, PIN_D_LED_SIERRA);
 	inicializarMotorSierra(&motorSierra, PIN_D_RELE);
+  	inicializarLedDigital(&ledSierra, PIN_D_LED_SIERRA);
 	inicializarPulsadores();
     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
 	evento.tipo = EVENTO_CONTINUE;
@@ -282,17 +283,20 @@ void start()
 // ------------------------------------------------
 void verificarPulsadores()
 {
-    bool pulsadorSierraPresionado = esPulsadorPresionado(PIN_D_PULSADOR_SIERRA);
-    if (pulsadorSierraPresionado && motorSierra.estado == ESTADO_MOTOR_APAGADO)
+    if (pulsadorSierraActivado)
     {
-		evento.tipo = EVENTO_ACTIVACION_SIERRA;
-      	attachInterrupt(digitalPinToInterrupt(PIN_D_PULSADOR_SIERRA), ISR_Boton, MODO_PIN_SIERRA);
+        if (estadoPulsador == ACTIVAR_SIERRA)
+        {
+            evento.tipo = EVENTO_ACTIVACION_SIERRA;
+            estadoPulsador = DETENER_SIERRA;
+        }
+        else if (estadoPulsador == DETENER_SIERRA)
+        {
+            evento.tipo = EVENTO_SIERRA_DETENIDA;
+            estadoPulsador = ACTIVAR_SIERRA;
+        }
+        pulsadorSierraActivado = false;
     }
-}
-
-bool esPulsadorPresionado(unsigned int pinPulsador)
-{
-    return digitalRead(pinPulsador) == LOW;
 }
 
 //----------------------------------------------------
@@ -311,11 +315,11 @@ void encenderMotorYLedSierra()
 
 void detenerMotorYLedSierra()
 {
-	if(motorSierra.estado == ESTADO_MOTOR_PRENDIDO)
-	{
-		digitalWrite(motorSierra.pinRele, LOW);
-		motorSierra.estado = ESTADO_MOTOR_APAGADO;
-		digitalWrite(ledSierra.pin, LOW);
-		ledSierra.encendido = false;
-	}
+    if(motorSierra.estado == ESTADO_MOTOR_PRENDIDO)
+    {
+        digitalWrite(motorSierra.pinRele, LOW);
+        motorSierra.estado = ESTADO_MOTOR_APAGADO;
+        digitalWrite(ledSierra.pin, LOW);
+        ledSierra.encendido = false;
+    }
 }
