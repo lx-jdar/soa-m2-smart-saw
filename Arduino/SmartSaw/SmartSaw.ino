@@ -406,7 +406,7 @@ void maquinaEstado()
         case ESTADO_EMBEBIDO_SIERRA_ACTIVA:
         {
             switch (evento.tipo)
-            {                
+
                 case EVENTO_SIERRA_DETENIDA:
                 {
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_SIERRA_DETENIDA");
@@ -432,17 +432,17 @@ void maquinaEstado()
                 }
                 
                 case EVENTO_CONTINUE:
-				{
-					log("ESTADO_EMBEBIDO_IDLE", "EVENTO_CONTINUE");
-					estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
-					break;
-				}
-                
-				default:
-				{
-					log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_NO_RECONOCIDO");
-					break;					
-				}
+                {
+                  log("ESTADO_EMBEBIDO_IDLE", "EVENTO_CONTINUE");
+                  estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
+                  break;
+                }
+
+                default:
+                {
+                  log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_NO_RECONOCIDO");
+                  break;					
+                }
             }
             break;
         }
@@ -490,51 +490,51 @@ void loop()
 //----------------------------------------------------
 void inicializarMonitor(Monitor* monitor, long baudRate)
 {
-    monitor->estado = ESTADO_MONITOR_ACTUALIZAR_MENSAJE;
-	monitor->configuracion = baudRate;
-  	Serial.begin(monitor->configuracion);
+  monitor->estado = ESTADO_MONITOR_ACTUALIZAR_MENSAJE;
+  monitor->configuracion = baudRate;
+  Serial.begin(monitor->configuracion);
 }
 
 void inicializarMotorDesplazamiento(MotorDesplazamiento* motorDesplazamiento, int pinTerminal1, int pinTerminal2, int pinVelocidad)
 {
-	motorDesplazamiento->pinTerminal1 = pinTerminal1;
-    motorDesplazamiento->pinTerminal2 = pinTerminal2;
-    motorDesplazamiento->pinVelocidad = PIN_P_MDC_SPEED;
-    motorDesplazamiento->estado = ESTADO_MOTOR_APAGADO;
-    pinMode(motorDesplazamiento->pinTerminal1, OUTPUT);
-    pinMode(motorDesplazamiento->pinTerminal2, OUTPUT);
-    pinMode(motorDesplazamiento->pinVelocidad, OUTPUT);
+  motorDesplazamiento->pinTerminal1 = pinTerminal1;
+  motorDesplazamiento->pinTerminal2 = pinTerminal2;
+  motorDesplazamiento->pinVelocidad = PIN_P_MDC_SPEED;
+  motorDesplazamiento->estado = ESTADO_MOTOR_APAGADO;
+  pinMode(motorDesplazamiento->pinTerminal1, OUTPUT);
+  pinMode(motorDesplazamiento->pinTerminal2, OUTPUT);
+  pinMode(motorDesplazamiento->pinVelocidad, OUTPUT);
 }
 
 void inicializarUltrasonido(Ultrasonido* ultrasonido, int pinTrigger, int pinEcho)
 {
 	ultrasonido->pinTrigger = pinTrigger;
-    ultrasonido->pinEcho = pinEcho;
-    ultrasonido->estado = ESTADO_ULT_DETENIDO;
+  ultrasonido->pinEcho = pinEcho;
+  ultrasonido->estado = ESTADO_ULT_DETENIDO;
 	ultrasonido->sentido = SIN_MOVIMIENTO;
-    pinMode(ultrasonido->pinTrigger, OUTPUT);
-    pinMode(ultrasonido->pinEcho, INPUT);
+  pinMode(ultrasonido->pinTrigger, OUTPUT);
+  pinMode(ultrasonido->pinEcho, INPUT);
 }
 
 void inicializarLedDigital(LedDigital* ledDigital, int pin)
 {
 	ledDigital->pin = pin;
-    ledDigital->encendido = false;
-    pinMode(ledDigital->pin, OUTPUT);
+  ledDigital->encendido = false;
+  pinMode(ledDigital->pin, OUTPUT);
 }
 
 void inicializarMotorSierra(MotorSierra* motorSierra, int pinRele)
 {
 	motorSierra->pinRele = pinRele;
 	motorSierra->estado = ESTADO_MOTOR_APAGADO;
-    pinMode(motorSierra->pinRele, OUTPUT);
+  pinMode(motorSierra->pinRele, OUTPUT);
 }
 
 void inicializarPulsadores()
 {
 	pinMode(PIN_D_PULSADOR_IZQUIERDA, INPUT_PULLUP);
-    pinMode(PIN_D_PULSADOR_DERECHA, INPUT_PULLUP);
-    pinMode(PIN_D_PULSADOR_SIERRA, INPUT_PULLUP);
+  pinMode(PIN_D_PULSADOR_DERECHA, INPUT_PULLUP);
+  pinMode(PIN_D_PULSADOR_SIERRA, INPUT_PULLUP);
 }
 
 void inicializarVariablesGlobales()
@@ -543,11 +543,11 @@ void inicializarVariablesGlobales()
 	estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
 	estadoPulsador = ACTIVAR_SIERRA;
 	evento.tipo = EVENTO_CONTINUE;
-    posicionActual = 0;
-    posicionDePartida = 0;
+  posicionActual = 0;
+  posicionDePartida = 0;
 	pulsadorSierraActivado = false;
 	startTime = 0;
-    valorDesplazamiento = 0;
+  valorDesplazamiento = 0;
 }
 
 void start()
@@ -560,7 +560,7 @@ void start()
 	inicializarUltrasonido(&ultrasonidoHorizontal, PIN_D_TRIGGER_H, PIN_D_ECHO_H);
 	inicializarUltrasonido(&ultrasonidoVertical, PIN_D_TRIGGER_V, PIN_D_ECHO_V);
 	inicializarPulsadores();
-    inicializarVariablesGlobales();
+  inicializarVariablesGlobales();
 }
 
 // ------------------------------------------------
@@ -568,41 +568,41 @@ void start()
 // ------------------------------------------------
 void setMensajeAImprimir(String mensaje)
 {
-    monitor.mensaje = mensaje;
-    monitor.estado = ESTADO_MONITOR_IMPRIMIR;
+  monitor.mensaje = mensaje;
+  monitor.estado = ESTADO_MONITOR_IMPRIMIR;
 }
 
 void verificarLecturaDesdeMonitorSerial()
 {
-    switch (monitor.estado)
-    {
-        case ESTADO_MONITOR_ACTUALIZAR_MENSAJE:
-        {
-            monitor.mensaje = MENSAJE_INICIO;
-            monitor.estado = ESTADO_MONITOR_IMPRIMIR;
-            break;
-        }
-        
-        case ESTADO_MONITOR_IMPRIMIR:
-        {
-            Serial.println(monitor.mensaje);
-            monitor.estado = ESTADO_MONITOR_ESPERANDO_INGRESO;
-            break;
-        }
-        
-        case ESTADO_MONITOR_ESPERANDO_INGRESO:
-        {
-            if (Serial.available())
-            {
-                monitor.input = Serial.readStringUntil('\n');
-                evento.tipo = EVENTO_INTRODUCCION_DE_DISTANCIA;
-            }
-            break;
-        }
-        
-        default:
-            break;
-    }
+  switch (monitor.estado)
+  {
+      case ESTADO_MONITOR_ACTUALIZAR_MENSAJE:
+      {
+          monitor.mensaje = MENSAJE_INICIO;
+          monitor.estado = ESTADO_MONITOR_IMPRIMIR;
+          break;
+      }
+
+      case ESTADO_MONITOR_IMPRIMIR:
+      {
+          Serial.println(monitor.mensaje);
+          monitor.estado = ESTADO_MONITOR_ESPERANDO_INGRESO;
+          break;
+      }
+
+      case ESTADO_MONITOR_ESPERANDO_INGRESO:
+      {
+          if (Serial.available())
+          {
+              monitor.input = Serial.readStringUntil('\n');
+              evento.tipo = EVENTO_INTRODUCCION_DE_DISTANCIA;
+          }
+          break;
+      }
+
+      default:
+          break;
+  }
 }
 
 // ------------------------------------------------
@@ -610,40 +610,40 @@ void verificarLecturaDesdeMonitorSerial()
 // ------------------------------------------------
 void verificarPulsadoresDeDesplazamiento()
 {
-    bool pulsadorIzquierdaPresionado = esPulsadorPresionado(PIN_D_PULSADOR_IZQUIERDA);
-    bool pulsadorDerechaPresionado = esPulsadorPresionado(PIN_D_PULSADOR_DERECHA);
-    if (pulsadorIzquierdaPresionado)
-    {
-        evento.tipo = EVENTO_DESPLAZAMIENTO_IZQUIERDA;
-        ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
-        ultrasonidoHorizontal.sentido = SENTIDO_IZQUIERDA;
-    }
-    else if (pulsadorDerechaPresionado)
-    {
-        evento.tipo = EVENTO_DESPLAZAMIENTO_DERECHA;
-        ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
-        ultrasonidoHorizontal.sentido = SENTIDO_DERECHA;
-    }
+  bool pulsadorIzquierdaPresionado = esPulsadorPresionado(PIN_D_PULSADOR_IZQUIERDA);
+  bool pulsadorDerechaPresionado = esPulsadorPresionado(PIN_D_PULSADOR_DERECHA);
+  if (pulsadorIzquierdaPresionado)
+  {
+    evento.tipo = EVENTO_DESPLAZAMIENTO_IZQUIERDA;
+    ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
+    ultrasonidoHorizontal.sentido = SENTIDO_IZQUIERDA;
+  }
+  else if (pulsadorDerechaPresionado)
+  {
+    evento.tipo = EVENTO_DESPLAZAMIENTO_DERECHA;
+    ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
+    ultrasonidoHorizontal.sentido = SENTIDO_DERECHA;
+  }
 }
 
 void verificarPulsadorDeSierra()
 {
-    if (estadoPulsador == ACTIVAR_SIERRA && pulsadorSierraActivado)
+  if (estadoPulsador == ACTIVAR_SIERRA && pulsadorSierraActivado)
+  {
+    evento.tipo = EVENTO_ACTIVACION_SIERRA;
+    estadoPulsador = DETENER_SIERRA;
+    pulsadorSierraActivado = false;
+    ultrasonidoVertical.estado = ESTADO_ULT_LONGITUD_PERMITIDA;
+  }
+  else
+  {
+    if(estadoPulsador == DETENER_SIERRA && pulsadorSierraActivado)
     {
-        evento.tipo = EVENTO_ACTIVACION_SIERRA;
-        estadoPulsador = DETENER_SIERRA;
+        evento.tipo = EVENTO_SIERRA_DETENIDA;
+        estadoPulsador = ACTIVAR_SIERRA;
         pulsadorSierraActivado = false;
-        ultrasonidoVertical.estado = ESTADO_ULT_LONGITUD_PERMITIDA;
     }
-    else
-    {
-        if(estadoPulsador == DETENER_SIERRA && pulsadorSierraActivado)
-        {
-            evento.tipo = EVENTO_SIERRA_DETENIDA;
-            estadoPulsador = ACTIVAR_SIERRA;
-            pulsadorSierraActivado = false;
-        }
-    }
+  }
 }
 
 void verificarPulsadores()
@@ -672,16 +672,16 @@ void verificarPosicionUltrasonidoHorizontal()
     actualizarUltrasonido(&ultrasonidoHorizontal);
     switch (ultrasonidoHorizontal.estado)
     {
-        case ESTADO_ULT_UMBRAL_SUPERADO:
+      case ESTADO_ULT_UMBRAL_SUPERADO:
+      {
+        ultrasonidoHorizontal.estado = ESTADO_ULT_DETENIDO;
+        ultrasonidoHorizontal.sentido = SIN_MOVIMIENTO;
+        if(estadoEmbebido == ESTADO_EMBEBIDO_EN_MOVIMIENTO)
         {
-			ultrasonidoHorizontal.estado = ESTADO_ULT_DETENIDO;
-            ultrasonidoHorizontal.sentido = SIN_MOVIMIENTO;
-			if(estadoEmbebido == ESTADO_EMBEBIDO_EN_MOVIMIENTO)
-			{
-				evento.tipo = EVENTO_LIMITE_HORIZONTAL_SUPERADO;
-			}
-            break;
+          evento.tipo = EVENTO_LIMITE_HORIZONTAL_SUPERADO;
         }
+        break;
+      }
         
         case ESTADO_ULT_EN_MOVIMIENTO:
         {
