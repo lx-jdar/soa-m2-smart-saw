@@ -6,8 +6,11 @@
 // ------------------------------------------------
 // Constantes
 // ------------------------------------------------
+#define ACTIVAR_SIERRA 20
 #define BAUD_RATE 9600
 #define CANTIDAD_MAXIMA_DE_ENTRADAS 4
+#define DEBOUNCE_TIME_MS 150
+#define DETENER_SIERRA 21
 #define MARGEN_DE_ERROR 1L
 #define MODO_PIN_SIERRA FALLING 	// CHANGE, RISING, FALLING
 #define MOTOR_SPEED 128
@@ -153,10 +156,14 @@ typedef struct
 // ------------------------------------------------
 // Variables globales
 // ------------------------------------------------
-int valorDesplazamiento = 0;
-long posicionActual = 0;
-long posicionDePartida = 0;
-int entradaActual = 0;
+int entradaActual;
+int estadoPulsador;
+long posicionActual;
+long posicionDePartida;
+volatile bool pulsadorSierraActivado;
+long startTime;
+const int timeThreshold = DEBOUNCE_TIME_MS;
+int valorDesplazamiento;
 
 estadoEnum estadoEmbebido;
 Evento evento;
@@ -210,18 +217,23 @@ void inicializarUltrasonido(Ultrasonido* ultrasonido, int pinTrigger, int pinEch
 void inicializarLedDigital(LedDigital* ledDigital, int pin);
 void inicializarMotorSierra(MotorSierra* motorSierra, int pinRele);
 void inicializarPulsadores();
+void inicializarVariablesGlobales();
 
 void loop();
 void obtenerEvento();
 void maquinaEstado();
 void ISR_Boton();
 
-void encenderMotorYLedDesplazamiento(unsigned int pinPulsador);
-void detenerMotorYLedDesplazamiento();
-void encenderMotorYLedSierra();
-void detenerMotorYLedSierra();
+void encenderMotorDesplazamiento(unsigned int pinPulsador);
+void detenerMotorDesplazamiento();
+void encenderMotorSierra();
+void detenerMotorSierra();
+void encenderLed(LedDigital* ledDigital);
+void apagarLed(LedDigital* ledDigital);
 
 void verificarLecturaDesdeMonitorSerial();
+void verificarPulsadoresDeDesplazamiento();
+void verificarPulsadorDeSierra();
 void verificarPulsadores();
 void verificarPosicionUltrasonidoHorizontal();
 void verificarPosicionUltrasonidoVertical();
@@ -245,16 +257,6 @@ void obtenerEvento()
 {
     verificarEntradas[entradaActual]();
     entradaActual = entradaActual < CANTIDAD_MAXIMA_DE_ENTRADAS - 1? entradaActual + 1 : 0; 
-    /*if(entradaActual < CANTIDAD_MAXIMA_DE_ENTRADAS - 1)
-    {
-        entradaActual++;
-    }
-    else
-    {
-        entradaActual = 0;
-        evento.tipo = EVENTO_CONTINUE;
-        evento.valor = VALOR_CONTINUE;
-    }*/
 }
 
 // ------------------------------------------------
@@ -312,16 +314,25 @@ void maquinaEstado()
                 case EVENTO_ACTIVACION_SIERRA:
                 {
                     log("ESTADO_EMBEBIDO_IDLE", "EVENTO_ACTIVACION_SIERRA");
+                    encenderMotorSierra();
+                    encenderLed(&ledSierra);
+                    setMensajeAImprimir("Pulsador sierrra encendida. Cortando ...");
                     estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
                     break;
                 }
 
                 case EVENTO_CONTINUE:
+                {
+                    log("ESTADO_EMBEBIDO_IDLE", "EVENTO_CONTINUE");
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
                     break;
+                }
 
                 default:
-                    break;
+				{
+					log("ESTADO_EMBEBIDO_IDLE", "EVENTO_NO_RECONOCIDO");
+					break;					
+				}
             }
             break;
         }
@@ -334,7 +345,8 @@ void maquinaEstado()
                 case EVENTO_DESPLAZAMIENTO_IZQUIERDA:
                 {
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_DESPLAZAMIENTO_IZQUIERDA");
-                    encenderMotorYLedDesplazamiento(PIN_D_PULSADOR_IZQUIERDA);
+                    encenderMotorDesplazamiento(PIN_D_PULSADOR_IZQUIERDA);
+                    encenderLed(&ledDesplazamiento);
                     setMensajeAImprimir("Pulsador izquierdo presionado. Desplazando motor a izquierda.");
                     estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
@@ -343,7 +355,8 @@ void maquinaEstado()
                 case EVENTO_DESPLAZAMIENTO_DERECHA:
                 {
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_DESPLAZAMIENTO_DERECHA");
-                    encenderMotorYLedDesplazamiento(PIN_D_PULSADOR_DERECHA);
+                    encenderMotorDesplazamiento(PIN_D_PULSADOR_DERECHA);
+                    encenderLed(&ledDesplazamiento);
                     setMensajeAImprimir("Pulsador derecho presionado. Desplazando motor a derecha.");
                     estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
@@ -352,7 +365,8 @@ void maquinaEstado()
                 case EVENTO_POSICION_FINALIZADA:
                 {
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_POSICION_FINALIZADA");
-                    detenerMotorYLedDesplazamiento();
+                    detenerMotorDesplazamiento();
+                    apagarLed(&ledDesplazamiento);
                     monitor.mensaje = "Posicionamiento finalizado.\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -363,7 +377,8 @@ void maquinaEstado()
                 case EVENTO_LIMITE_HORIZONTAL_SUPERADO:
                 {
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_LIMITE_HORIZONTAL_SUPERADO");
-                    detenerMotorYLedDesplazamiento();
+                    detenerMotorDesplazamiento();
+                    apagarLed(&ledDesplazamiento);
                     monitor.mensaje = "Se quiere desplazar mas que el umbral maximo. Motor de desplazamiento apagandose ...\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -372,12 +387,17 @@ void maquinaEstado()
                 }
                 
                 case EVENTO_CONTINUE:
+                {
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_CONTINUE");
                     estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
+                }
                 
                 default:
-                    break;
+				{
+					log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_NO_RECONOCIDO");
+					break;					
+				}
             }
             break;
         }
@@ -386,21 +406,12 @@ void maquinaEstado()
         case ESTADO_EMBEBIDO_SIERRA_ACTIVA:
         {
             switch (evento.tipo)
-            {
-                case EVENTO_ACTIVACION_SIERRA:
-                {
-                    log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_ACTIVACION_SIERRA");
-                    encenderMotorYLedSierra();
-                    setMensajeAImprimir("Pulsador sierrra encendida. Cortando ...");
-                    estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
-                    break;
-                }
-                
+            {                
                 case EVENTO_SIERRA_DETENIDA:
                 {
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_SIERRA_DETENIDA");
-                    detenerMotorYLedSierra();
-                    detachInterrupt(digitalPinToInterrupt(PIN_D_PULSADOR_SIERRA));
+                    detenerMotorSierra();
+                    apagarLed(&ledSierra);
                     monitor.mensaje = "Deteniendo el motor sierra ...\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -411,7 +422,8 @@ void maquinaEstado()
                 case EVENTO_LIMITE_VERTICAL_SUPERADO:
                 {
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_LIMITE_VERTICAL_SUPERADO");
-                    detenerMotorYLedSierra();
+                    detenerMotorSierra();
+                    apagarLed(&ledSierra);
                     monitor.mensaje = "Pase el umbral minimo. Deteniendo el motor sierra ...\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -420,12 +432,17 @@ void maquinaEstado()
                 }
                 
                 case EVENTO_CONTINUE:
-                    log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_CONTINUE");
-                    estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
-                    break;
+				{
+					log("ESTADO_EMBEBIDO_IDLE", "EVENTO_CONTINUE");
+					estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
+					break;
+				}
                 
-                default:
-                    break;
+				default:
+				{
+					log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_NO_RECONOCIDO");
+					break;					
+				}
             }
             break;
         }
@@ -444,12 +461,11 @@ void maquinaEstado()
 //----------------------------------------------------
 void ISR_Boton()
 {
-    if (estadoEmbebido == ESTADO_EMBEBIDO_SIERRA_ACTIVA && ledSierra.encendido)
-    {
-        log("Interrupcion detectada, sierra apagada.");
-        ultrasonidoVertical.estado = ESTADO_ULT_DETENIDO;
-        evento.tipo = EVENTO_SIERRA_DETENIDA;
-    }
+	if (millis() - startTime > timeThreshold)
+	{
+	  pulsadorSierraActivado = true;
+	  startTime = millis();
+	}
 }
 
 //----------------------------------------------------
@@ -458,6 +474,7 @@ void ISR_Boton()
 void setup()
 {
     start();
+    attachInterrupt(digitalPinToInterrupt(PIN_D_PULSADOR_SIERRA), ISR_Boton, MODO_PIN_SIERRA);
 }
 
 //----------------------------------------------------
@@ -520,6 +537,19 @@ void inicializarPulsadores()
     pinMode(PIN_D_PULSADOR_SIERRA, INPUT_PULLUP);
 }
 
+void inicializarVariablesGlobales()
+{
+	entradaActual = 0;
+	estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
+	estadoPulsador = ACTIVAR_SIERRA;
+	evento.tipo = EVENTO_CONTINUE;
+    posicionActual = 0;
+    posicionDePartida = 0;
+	pulsadorSierraActivado = false;
+	startTime = 0;
+    valorDesplazamiento = 0;
+}
+
 void start()
 {
 	inicializarLedDigital(&ledSierra, PIN_D_LED_SIERRA);
@@ -530,8 +560,7 @@ void start()
 	inicializarUltrasonido(&ultrasonidoHorizontal, PIN_D_TRIGGER_H, PIN_D_ECHO_H);
 	inicializarUltrasonido(&ultrasonidoVertical, PIN_D_TRIGGER_V, PIN_D_ECHO_V);
 	inicializarPulsadores();
-    estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
-	evento.tipo = EVENTO_CONTINUE;
+    inicializarVariablesGlobales();
 }
 
 // ------------------------------------------------
@@ -579,11 +608,10 @@ void verificarLecturaDesdeMonitorSerial()
 // ------------------------------------------------
 // Lógica de Sensores
 // ------------------------------------------------
-void verificarPulsadores()
+void verificarPulsadoresDeDesplazamiento()
 {
     bool pulsadorIzquierdaPresionado = esPulsadorPresionado(PIN_D_PULSADOR_IZQUIERDA);
     bool pulsadorDerechaPresionado = esPulsadorPresionado(PIN_D_PULSADOR_DERECHA);
-    bool pulsadorSierraPresionado = esPulsadorPresionado(PIN_D_PULSADOR_SIERRA);
     if (pulsadorIzquierdaPresionado)
     {
         evento.tipo = EVENTO_DESPLAZAMIENTO_IZQUIERDA;
@@ -596,12 +624,32 @@ void verificarPulsadores()
         ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
         ultrasonidoHorizontal.sentido = SENTIDO_DERECHA;
     }
-    else if (pulsadorSierraPresionado)
+}
+
+void verificarPulsadorDeSierra()
+{
+    if (estadoPulsador == ACTIVAR_SIERRA && pulsadorSierraActivado)
     {
-		evento.tipo = EVENTO_ACTIVACION_SIERRA;
-		ultrasonidoVertical.estado = ESTADO_ULT_LONGITUD_PERMITIDA;
-      	attachInterrupt(digitalPinToInterrupt(PIN_D_PULSADOR_SIERRA), ISR_Boton, MODO_PIN_SIERRA);
+        evento.tipo = EVENTO_ACTIVACION_SIERRA;
+        estadoPulsador = DETENER_SIERRA;
+        pulsadorSierraActivado = false;
+        ultrasonidoVertical.estado = ESTADO_ULT_LONGITUD_PERMITIDA;
     }
+    else
+    {
+        if(estadoPulsador == DETENER_SIERRA && pulsadorSierraActivado)
+        {
+            evento.tipo = EVENTO_SIERRA_DETENIDA;
+            estadoPulsador = ACTIVAR_SIERRA;
+            pulsadorSierraActivado = false;
+        }
+    }
+}
+
+void verificarPulsadores()
+{
+    verificarPulsadoresDeDesplazamiento();
+    verificarPulsadorDeSierra();
 }
 
 void verificarLimitesHorizontales()
@@ -671,21 +719,12 @@ void verificarPosicionUltrasonidoVertical()
 	actualizarUltrasonido(&ultrasonidoVertical);	// Actualizar la posicion actual del ultrasonido
     switch (ultrasonidoVertical.estado)
 	{
-		// Ver si se puede eliminar
-        case ESTADO_ULT_DETENIDO:
-		{
-			evento.tipo = EVENTO_SIERRA_DETENIDA;
-			break;
-		}
 
 		case ESTADO_ULT_LONGITUD_PERMITIDA:
 		{
 			posicionActual = ultrasonidoVertical.cm;
 			log("Posicion actual ULT V: " + String(posicionActual) + " CM.");
-			if (posicionActual <= DISTANCIA_MINIMA_V)
-			{
-				ultrasonidoVertical.estado = ESTADO_ULT_UMBRAL_SUPERADO;
-			}
+			if (posicionActual <= DISTANCIA_MINIMA_V) ultrasonidoVertical.estado = ESTADO_ULT_UMBRAL_SUPERADO;
 			break;
 		}
 		
@@ -725,28 +764,20 @@ bool esPulsadorPresionado(unsigned int pinPulsador)
 //----------------------------------------------------
 // Lógica de Actuadores
 //----------------------------------------------------
-void encenderMotorYLedDesplazamiento(unsigned int pinPulsador)
+void encenderMotorDesplazamiento(unsigned int pinPulsador)
 {
   	if(motorDesplazamiento.estado == ESTADO_MOTOR_APAGADO)
     {
-      motorDesplazamiento.estado = ESTADO_MOTOR_PRENDIDO;
-      analogWrite(motorDesplazamiento.pinVelocidad, MOTOR_SPEED);
-      if (pinPulsador == PIN_D_PULSADOR_IZQUIERDA)
-      {
-          digitalWrite(motorDesplazamiento.pinTerminal1, HIGH);
-          digitalWrite(motorDesplazamiento.pinTerminal2, LOW);
-      }
-      else if (pinPulsador == PIN_D_PULSADOR_DERECHA)
-      {
-          digitalWrite(motorDesplazamiento.pinTerminal1, LOW);
-          digitalWrite(motorDesplazamiento.pinTerminal2, HIGH);
-      }
-      digitalWrite(ledDesplazamiento.pin, HIGH);
-      ledDesplazamiento.encendido = true;
+        motorDesplazamiento.estado = ESTADO_MOTOR_PRENDIDO;
+        analogWrite(motorDesplazamiento.pinVelocidad, MOTOR_SPEED);
+        bool direccionIzquierda = (pinPulsador == PIN_D_PULSADOR_IZQUIERDA);
+        digitalWrite(motorDesplazamiento.pinTerminal1, direccionIzquierda ? HIGH : LOW);
+        digitalWrite(motorDesplazamiento.pinTerminal2, direccionIzquierda ? LOW : HIGH);
     }
 }
 
-void detenerMotorYLedDesplazamiento()
+
+void detenerMotorDesplazamiento()
 {
     if(motorDesplazamiento.estado == ESTADO_MOTOR_PRENDIDO)
     {
@@ -754,29 +785,41 @@ void detenerMotorYLedDesplazamiento()
         digitalWrite(motorDesplazamiento.pinTerminal1, LOW);
         digitalWrite(motorDesplazamiento.pinTerminal2, LOW);
         motorDesplazamiento.estado = ESTADO_MOTOR_APAGADO;
-        digitalWrite(ledDesplazamiento.pin, LOW);
-        ledDesplazamiento.encendido = false;
     }
 }
 
-void encenderMotorYLedSierra()
+void encenderMotorSierra()
 {
     if(motorSierra.estado == ESTADO_MOTOR_APAGADO)
 	{
 		digitalWrite(motorSierra.pinRele, HIGH);
 		motorSierra.estado = ESTADO_MOTOR_PRENDIDO;
-		digitalWrite(ledSierra.pin, HIGH);
-		ledSierra.encendido = true;
 	}
 }
 
-void detenerMotorYLedSierra()
+void detenerMotorSierra()
 {
 	if(motorSierra.estado == ESTADO_MOTOR_PRENDIDO)
 	{
 		digitalWrite(motorSierra.pinRele, LOW);
 		motorSierra.estado = ESTADO_MOTOR_APAGADO;
-		digitalWrite(ledSierra.pin, LOW);
-		ledSierra.encendido = false;
+	}
+}
+
+void encenderLed(LedDigital* ledDigital)
+{
+	if(ledDigital->encendido == false)
+	{
+		digitalWrite(ledDigital->pin, HIGH);
+		ledDigital->encendido = true;
+	}
+}
+
+void apagarLed(LedDigital* ledDigital)
+{
+	if(ledDigital->encendido == true)
+	{
+		digitalWrite(ledDigital->pin, LOW);
+		ledDigital->encendido = false;
 	}
 }
