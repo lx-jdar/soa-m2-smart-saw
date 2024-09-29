@@ -1,4 +1,4 @@
-# Smart SAW
+# Smart Saw
 Repositorio dedicado al proyecto IoT mediante Arduino y Android.
 
 ## Información de la Asignatura
@@ -14,10 +14,12 @@ Repositorio dedicado al proyecto IoT mediante Arduino y Android.
 * **Correlativa anterior**: Virtualización de Hardware (3654)
 
 ## Integrantes
-* Rodriguez, Mariano Lionel
-* Romano, Jorge Dario 
-* Sandoval, Juan Leandro
-* Vivas, Pablo Ezequiel
+| Nombre | DNI |
+|--|--|
+| Rodriguez, Mariano Lionel | 39.336.952 |
+| Romano, Jorge Dario | 33.901.015 |
+| Sandoval Vasquez, Juan Leandro | 41.548.235 |
+| Vivas, Pablo Ezequiel | 38.703.964 |
 
 ## Docentes
 * Adagio, Matias Ezequiel
