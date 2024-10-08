@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">AplicacionTest</string>
+    <string name="smart_saw">Smart Saw</string>
+    <string name="iniciar_sierra">Iniciar Sierra</string>
+    <string name="iniciar_desplazamiento">Iniciar Desplazamiento</string>
+    <string name="iniciar_sistema">Iniciar Sistema</string>
+    <string name="off_on">OFF / ON</string>
+    <string name="descripcion_logo_smart_saw">Logo representativo del sistema</string>
+    <string name="descripcion_boton_configuracion">Configuracion para setear los parametros del sistema</string>
+    <string name="configuracion">Configuración</string>
+    <string name="velocidad_del_motor">Velocidad del Motor</string>
+    <string name="descripcion_icono_smart_saw">Icono correspondiente a la sierra</string>
+    <string name="limite_vertical">Límite Vertical</string>
+    <string name="limite_horizontal_izquierdo">Límite Horizontal Izquierdo</string>
+    <string name="limite_horizontal_derecho">Límite Horizontal Derecho</string>
+    <string name="margen_de_error">Margen de Error</string>
+</resources>
