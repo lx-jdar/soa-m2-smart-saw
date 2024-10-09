@@ -792,7 +792,7 @@ void encenderMotorSierra()
 {
     if(motorSierra.estado == ESTADO_MOTOR_APAGADO)
 	{
-		digitalWrite(motorSierra.pinRele, HIGH);
+		digitalWrite(motorSierra.pinRele, LOW);
 		motorSierra.estado = ESTADO_MOTOR_PRENDIDO;
 	}
 }
@@ -801,7 +801,7 @@ void detenerMotorSierra()
 {
 	if(motorSierra.estado == ESTADO_MOTOR_PRENDIDO)
 	{
-		digitalWrite(motorSierra.pinRele, LOW);
+		digitalWrite(motorSierra.pinRele, HIGH);
 		motorSierra.estado = ESTADO_MOTOR_APAGADO;
 	}
 }
