@@ -48,9 +48,10 @@ public class OptionsActivity extends AppCompatActivity {
             boolean isEnabled = !isChecked;
             buttonConfiguration.setEnabled(isEnabled);
             buttonPositioning.setEnabled(isEnabled);
-            if (isChecked) {
+            // DESCOMENTAR UNA VEZ APLICADA LA LOGICA DEL UMBRAL VERTICAL
+            /*if (isChecked) {
                 switchOnOff.postDelayed(this::showAlertPopupVerticalLimit, 3000);
-            }
+            }*/
         });
 
         buttonConfiguration.setOnClickListener(v -> {
@@ -73,6 +74,7 @@ public class OptionsActivity extends AppCompatActivity {
         }
     };
 
+    @SuppressWarnings("unused")
     private void showAlertPopupVerticalLimit() {
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.popup_title_vertical_limit))

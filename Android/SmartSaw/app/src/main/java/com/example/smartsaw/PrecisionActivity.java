@@ -68,8 +68,8 @@ public class PrecisionActivity extends AppCompatActivity {
                 Intent intent = new Intent(PrecisionActivity.this, MovementActivity.class);
                 startActivity(intent);
                 finish();
-            }  else {
-                Toast.makeText(PrecisionActivity.this, "El valor actual es requerido", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(PrecisionActivity.this, getString(R.string.current_value_is_required), Toast.LENGTH_SHORT).show();
             }
         });
     }

@@ -14,8 +14,6 @@ public class MainActivity extends AppCompatActivity {
 
     //#region Attributes
 
-    private ButtonWood buttonStartSystem;
-
     //#endregion
 
     //#region Activity Methods
@@ -38,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     //#region Private Methods
 
     private void setupButton() {
-        buttonStartSystem = findViewById(R.id.btn_start_system);
+        ButtonWood buttonStartSystem = findViewById(R.id.btn_start_system);
         buttonStartSystem.setButtonText(getString(R.string.start_system));
         buttonStartSystem.setButtonOnClickListener(buttonListener);
     }
