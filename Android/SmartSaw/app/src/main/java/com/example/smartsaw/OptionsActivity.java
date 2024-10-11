@@ -19,6 +19,7 @@ public class OptionsActivity extends AppCompatActivity {
     private SwitchCompat switchOnOff;
     private ImageButton buttonConfiguration;
     private ButtonWood buttonPositioning;
+    private ImageButton btnBack;
 
     //#endregion
 
@@ -41,6 +42,7 @@ public class OptionsActivity extends AppCompatActivity {
         buttonConfiguration = findViewById(R.id.btn_configuration);
         buttonPositioning = findViewById(R.id.btn_position_saw);
         buttonPositioning.setButtonText(getString(R.string.position_saw));
+        btnBack=findViewById(R.id.btn_back_options);
     }
 
     private void setListeners() {
@@ -62,6 +64,12 @@ public class OptionsActivity extends AppCompatActivity {
         });
 
         buttonPositioning.setButtonOnClickListener(btnListener);
+
+        btnBack.setOnClickListener(v -> {
+            Intent intent = new Intent(OptionsActivity.this, MainActivity.class);
+            startActivity(intent);
+            finish();
+        });
     }
 
     View.OnClickListener btnListener = new View.OnClickListener() {
