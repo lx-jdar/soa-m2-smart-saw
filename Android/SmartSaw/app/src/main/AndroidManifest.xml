@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Permisos que necesitamos.
+         En este caso solicitamos permisos para ejecutar en servicios en foreground
+         Para poder trabajar con la barra de notificaciones que salen arriba en el celular
+         Y permisos para poder ejecutar el reproductor media
+         Aca tambien se pide permisos para poder utilizar bluetooh o wifi -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <!-- Aplicacion del programa aca se encuentran las actividades y los servicios declarados tambien existen algunos atributos
+         android:icon = Icono donde se encuentra la aplicacion en el SO (lo podemos cambiar)
+         android:label = Etiqueta de la aplicacion -->
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SmartSaw">
+
+        <!-- Actividad principal, si creamos otra actividad que quisieramos que sea la actividad principal, tenemos que definirlo aca -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+
+            <!-- Esto define una especie de suscripcion a un evento que es el evento MAIN y el evento LAUNCHER
+                 cuando se inicie la aplicacion, se ejecuta esta actividad (MainActivity) -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <activity android:name=".OptionsActivity" />
+        <activity android:name=".ConfigurationActivity" />
+        <activity android:name=".PrecisionActivity" />
+        <activity android:name=".MovementActivity" />
+
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
+
+    </application>
+
+</manifest>

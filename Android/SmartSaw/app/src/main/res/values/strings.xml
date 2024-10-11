@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">SmartSaw</string>
+    <string name="changes_saved">Cambios guardados</string>
+    <string name="configuration">Configuración</string>
+    <string name="current_value">VALOR ACTUAL</string>
+    <string name="direction_of_movement">Sentido Desplazamiento</string>
+    <string name="horizontal_limit_left">Límite Horizontal Izquierdo</string>
+    <string name="horizontal_limit_right">Límite Horizontal Derecho</string>
+    <string name="enter_value">Ingrese un valor</string>
+    <string name="error_margin">Margen de Error</string>
+    <string name="left">Izquierda</string>
+    <string name="motor_speed">Velocidad del Motor</string>
+    <string name="move">Desplazar</string>
+    <string name="off_on">OFF / ON</string>
+    <string name="popup_title_vertical_limit">Límite Vertical Superado</string>
+    <string name="popup_description_vertical_limit">La sierra ha pasado del límite vertical establecido y se apagará</string>
+    <string name="position_saw">Posicionar Sierra</string>
+    <string name="presicion">Precisión</string>
+    <string name="required_field">Campo requerido</string>
+    <string name="rigth">Derecha</string>
+    <string name="save">Guardar</string>
+    <string name="smart_saw">Smart Saw</string>
+    <string name="start_saw">Iniciar Sierra</string>
+    <string name="start_system">Iniciar Sistema</string>
+    <string name="update">Actualizar</string>
+    <string name="vertical_limit">Límite Vertical</string>
+</resources>
