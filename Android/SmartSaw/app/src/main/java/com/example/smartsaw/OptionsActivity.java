@@ -19,7 +19,7 @@ public class OptionsActivity extends AppCompatActivity {
     private SwitchCompat switchOnOff;
     private ImageButton buttonConfiguration;
     private ButtonWood buttonPositioning;
-    private ImageButton btnBack;
+    private ImageButton buttonBack;
 
     //#endregion
 
@@ -41,8 +41,8 @@ public class OptionsActivity extends AppCompatActivity {
         switchOnOff = findViewById(R.id.switch_on_off);
         buttonConfiguration = findViewById(R.id.btn_configuration);
         buttonPositioning = findViewById(R.id.btn_position_saw);
+        buttonBack = findViewById(R.id.btn_options_back);
         buttonPositioning.setButtonText(getString(R.string.position_saw));
-        btnBack=findViewById(R.id.btn_back_options);
     }
 
     private void setListeners() {
@@ -50,6 +50,7 @@ public class OptionsActivity extends AppCompatActivity {
             boolean isEnabled = !isChecked;
             buttonConfiguration.setEnabled(isEnabled);
             buttonPositioning.setEnabled(isEnabled);
+            buttonBack.setEnabled(isEnabled);
             // DESCOMENTAR UNA VEZ APLICADA LA LOGICA DEL UMBRAL VERTICAL
             /*if (isChecked) {
                 switchOnOff.postDelayed(this::showAlertPopupVerticalLimit, 3000);
@@ -63,13 +64,13 @@ public class OptionsActivity extends AppCompatActivity {
             finish();
         });
 
-        buttonPositioning.setButtonOnClickListener(btnListener);
-
-        btnBack.setOnClickListener(v -> {
+        buttonBack.setOnClickListener(v -> {
             Intent intent = new Intent(OptionsActivity.this, MainActivity.class);
             startActivity(intent);
             finish();
         });
+
+        buttonPositioning.setButtonOnClickListener(btnListener);
     }
 
     View.OnClickListener btnListener = new View.OnClickListener() {
@@ -91,6 +92,7 @@ public class OptionsActivity extends AppCompatActivity {
                     switchOnOff.setChecked(false);
                     buttonConfiguration.setEnabled(true);
                     buttonPositioning.setEnabled(true);
+                    buttonBack.setEnabled(true);
                 })
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show();

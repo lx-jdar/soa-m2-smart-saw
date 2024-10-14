@@ -9,32 +9,6 @@
     android:background="@color/beige"
     tools:context=".OptionsActivity">
 
-    <ImageButton
-        android:id="@+id/btn_back_options"
-        android:layout_width="151dp"
-        android:layout_height="146dp"
-        android:layout_marginStart="4dp"
-        android:background="@android:color/transparent"
-        android:scaleX="0.5"
-        android:scaleY="0.5"
-        android:src="@drawable/btn_wood_back_selector"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:ignore="ContentDescription" />
-
-    <ImageButton
-        android:id="@+id/btn_configuration"
-        android:layout_width="100dp"
-        android:layout_height="122dp"
-        android:layout_marginEnd="68dp"
-        android:layout_marginBottom="16dp"
-        android:background="@android:color/transparent"
-        android:soundEffectsEnabled="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/btn_wood_configuration_selector"
-        tools:ignore="ContentDescription" />
-
     <ImageView
         android:id="@+id/smart_saw_logo"
         android:layout_width="wrap_content"
@@ -67,11 +41,35 @@
         android:id="@+id/btn_position_saw"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="20dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.612"
+        app:layout_constraintHorizontal_bias="0.494"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/switch_on_off" />
 
+    <ImageButton
+        android:id="@+id/btn_configuration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="44dp"
+        android:background="@android:color/transparent"
+        android:soundEffectsEnabled="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/btn_wood_configuration_selector"
+        tools:ignore="ContentDescription" />
+
+    <ImageButton
+        android:id="@+id/btn_options_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:scaleX="0.5"
+        android:scaleY="0.5"
+        android:src="@drawable/btn_wood_back_selector"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="ContentDescription,SpeakableTextPresentCheck" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
