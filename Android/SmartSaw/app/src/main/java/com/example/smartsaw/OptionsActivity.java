@@ -52,9 +52,9 @@ public class OptionsActivity extends AppCompatActivity {
             buttonPositioning.setEnabled(isEnabled);
             buttonBack.setEnabled(isEnabled);
             // DESCOMENTAR UNA VEZ APLICADA LA LOGICA DEL UMBRAL VERTICAL
-            /*if (isChecked) {
-                switchOnOff.postDelayed(this::showAlertPopupVerticalLimit, 3000);
-            }*/
+            if (isChecked) {
+                switchOnOff.postDelayed(this::showAlertPopupVerticalLimit, 1000);
+            }
         });
 
         buttonConfiguration.setOnClickListener(v -> {

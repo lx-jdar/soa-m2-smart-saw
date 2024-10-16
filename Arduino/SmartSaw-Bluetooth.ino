@@ -34,30 +34,31 @@
 // ------------------------------------------------
 // Pines Sensores (A = Analógico | D = Digital)
 // ------------------------------------------------
-#define PIN_D_PULSADOR_SIERRA 3
-#define PIN_D_PULSADOR_DERECHA 4
-#define PIN_D_PULSADOR_IZQUIERDA 5
+#define PIN_D_PULSADOR_SIERRA 2
+#define PIN_D_PULSADOR_DERECHA A1
+#define PIN_D_PULSADOR_IZQUIERDA A2
 #define PIN_D_TRIGGER_H 10
 #define PIN_D_ECHO_H 11
 #define PIN_D_TRIGGER_V 12
-#define PIN_D_ECHO_V 13
+#define PIN_D_ECHO_V A0
 
 // ------------------------------------------------
 // Pines Actuadores (P = PWM | D = Digital)
 // ------------------------------------------------
 #define PIN_D_LED_SIERRA 9
-#define PIN_D_LED_DESPLAZAMIENTO A0
+#define PIN_D_LED_DESPLAZAMIENTO 5
 #define PIN_P_MDC_SPEED 6   // Modulacion del PWM M1
 #define PIN_D_MDC_T1 7      // Control Motor P2 L293D, Terminal 1
 #define PIN_D_MDC_T2 8      // Control Motor P2 L293D, Terminal 2
-#define PIN_D_RELE 2
+#define PIN_D_RELE 13
+
 
 //--------------------------------------------------
 // Pines Bluetooth
 //--------------------------------------------------
 
-#define PIN_BLUETOOTH_RX 0 
-#define PIN_BLUETOOTH_TX 1 
+#define PIN_BLUETOOTH_RX 3 
+#define PIN_BLUETOOTH_TX 4
 #define BLUETOOTH_IZQUIERDA 'I'
 #define BLUETOOTH_DERECHA 'D'
 #define BLUETOOTH_SIERRA 'S'
@@ -180,6 +181,7 @@ volatile bool pulsadorSierraActivado;
 long startTime;
 const int timeThreshold = DEBOUNCE_TIME_MS;
 int valorDesplazamiento;
+  char caracterLeido;
 
 estadoEnum estadoEmbebido;
 Evento evento;
@@ -283,33 +285,45 @@ void obtenerEvento()
 }
 
 // Función para verificar si la cadena es un número
-bool esNumero(String str) {
+bool esNumero(char str) {
+  /*
     for (int i = 0; i < str.length(); i++) {
         if (!isDigit(str[i])) {
             return false;  // Si encuentras algo que no sea un dígito, no es un número
         }
     }
+    */
     return true;  // Si todos los caracteres son dígitos, es un número
 }
 
 void verificarBluetooth(){
 
     if(BTSerial.available()) {  // Si llega un dato por el puerto BT
-        caracterLeido = BTSerial.readStringUntil('\n');		//Usamos la variable global
+        caracterLeido = BTSerial.read();		//Usamos la variable global
         if(caracterLeido == BLUETOOTH_IZQUIERDA) { 
             // Si llega una 'I', encendemos el motor de traslación
             Serial.println("Motor de traslacion-sentido hacia izquierda \n");
             Serial.println("---------------------------------------------");
+            evento.tipo = EVENTO_DESPLAZAMIENTO_IZQUIERDA;
+            ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
+            ultrasonidoHorizontal.sentido = SENTIDO_IZQUIERDA;
             
         } else if(caracterLeido == BLUETOOTH_DERECHA) { 
             // Si llega una 'D', encendemos el motor de traslación
             Serial.println("Motor de traslacion-sentido hacia derecha \n");
             Serial.println("---------------------------------------------");
+            evento.tipo = EVENTO_DESPLAZAMIENTO_DERECHA;
+            ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
+            ultrasonidoHorizontal.sentido = SENTIDO_DERECHA;
         
         } else if(caracterLeido == BLUETOOTH_SIERRA) {
             // Si llega una 'S', encendemos el motor de la sierra
             Serial.println("Encendiendo motor de sierra \n");
             Serial.println("---------------------------------------------");
+            evento.tipo = EVENTO_ACTIVACION_SIERRA;
+            estadoPulsador = DETENER_SIERRA;
+            pulsadorSierraActivado = false;
+            ultrasonidoVertical.estado = ESTADO_ULT_LONGITUD_PERMITIDA;
         }
 	  else if(esNumero(caracterLeido)) {	//y si el numero es decimal????
             // Si llega un numero, avisamos
@@ -340,13 +354,13 @@ void maquinaEstado()
                     {
                         valorDesplazamiento = valorIngresado;																					//mensaje al serial
                         monitor.mensaje = "El motor se desplazara " + String(valorDesplazamiento) + " CM cuando se presione un pulsador.";
-                        BTSerial.write("El motor se desplazara " + String(valorDesplazamiento) + " CM cuando se presione una opcion\n");		//mensaje al HC-05
-                        BTSerial.write("I: Mover izquierda, D: Mover derecha");
+                        BTSerial.write("El motor se desplazara  CM cuando se presione una opcion");		//mensaje al HC-05
+                       // BTSerial.write("I: Mover izquierda, D: Mover derecha");
                     }
                     else
                     {
                         monitor.mensaje = "El valor ingresado no es valido.\n";																	//mensaje al serial
-                        BTSerial.write("El valor ingresado no es valido.\n");																	//mensaje al HC-05
+                      //  BTSerial.write("El valor ingresado no es valido.");																	//mensaje al HC-05
                         monitor.mensaje += MENSAJE_INICIO;
                     }
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -357,7 +371,7 @@ void maquinaEstado()
                 case EVENTO_LIMITE_HORIZONTAL_SUPERADO:
                 {
                     setMensajeAImprimir("El valor ingresado " + String(valorDesplazamiento) + " supera los limites establecidos del desplazamiento.");
-                    BTSerial.write("El valor ingresado " + String(valorDesplazamiento) + " supera los limites establecidos del desplazamiento.");
+                  //  BTSerial.write("El valor ingresado  supera los limites establecidos del desplazamiento.");
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
                     evento.tipo = EVENTO_CONTINUE;
                     break;
@@ -383,7 +397,7 @@ void maquinaEstado()
                     encenderMotorSierra();
                     encenderLed(&ledSierra);
                     setMensajeAImprimir("Pulsador sierra encendida. Cortando ...");
-                    BTserial.write("Sierra cortando...\n");
+                   // BTSerial.write("Sierra cortando...");
                     estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
                     break;
                 }
@@ -415,7 +429,7 @@ void maquinaEstado()
                     encenderMotorDesplazamiento(PIN_D_PULSADOR_IZQUIERDA);
                     encenderLed(&ledDesplazamiento);
                     setMensajeAImprimir("Pulsador izquierdo presionado. Desplazando motor a izquierda.");
-                    BTSerial.write("Desplazando motor a izquierda.\n");
+                    BTSerial.write("Desplazando motor a izquierda.");
                     estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
                 }
@@ -426,7 +440,7 @@ void maquinaEstado()
                     encenderMotorDesplazamiento(PIN_D_PULSADOR_DERECHA);
                     encenderLed(&ledDesplazamiento);
                     setMensajeAImprimir("Pulsador derecho presionado. Desplazando motor a derecha.");
-                    BTSerial.write("Desplazando motor a derecha.\n");
+                    BTSerial.write("Desplazando motor a derecha.");
                     estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
                 }
@@ -437,7 +451,7 @@ void maquinaEstado()
                     detenerMotorDesplazamiento();
                     apagarLed(&ledDesplazamiento);
                     monitor.mensaje = "Posicionamiento finalizado.\n";
-                    BTSerial.write("Posicionamiento finalizado.\n");
+                   // BTSerial.write("Posicionamiento finalizado.");
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
@@ -450,7 +464,7 @@ void maquinaEstado()
                     detenerMotorDesplazamiento();
                     apagarLed(&ledDesplazamiento);
                     monitor.mensaje = "Se quiere desplazar mas que el umbral maximo. Motor de desplazamiento apagandose ...\n";
-                    BTserial.write("Se quiere desplazar mas que el umbral maximo. Motor de desplazamiento apagandose...\n");
+                   // BTSerial.write("Se quiere desplazar mas que el umbral maximo. Motor de desplazamiento apagandose...");
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
@@ -476,7 +490,7 @@ void maquinaEstado()
 
         case ESTADO_EMBEBIDO_SIERRA_ACTIVA:
         {
-            switch (evento.tipo)
+            switch (evento.tipo){
 
                 case EVENTO_SIERRA_DETENIDA:
                 {
@@ -484,7 +498,7 @@ void maquinaEstado()
                     detenerMotorSierra();
                     apagarLed(&ledSierra);
                     monitor.mensaje = "Deteniendo el motor sierra ...\n";
-                    BTserial.write("Deteniendo el motor sierra...\n");
+                   // BTSerial.write("Deteniendo el motor sierra...");
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
@@ -497,7 +511,7 @@ void maquinaEstado()
                     detenerMotorSierra();
                     apagarLed(&ledSierra);
                     monitor.mensaje = "Pasa el umbral minimo. Deteniendo el motor sierra ...\n";
-                    BTSerial.write("Pasa el umbral minimo. Deteniendo el motor sierra ...\n");
+                 //   BTSerial.write("Pasa el umbral minimo. Deteniendo el motor sierra ...");
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
@@ -516,7 +530,7 @@ void maquinaEstado()
                   log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_NO_RECONOCIDO");
                   break;					
                 }
-            }
+          }
             break;
         }
         break;
@@ -526,7 +540,7 @@ void maquinaEstado()
     
     // Ya se atendió el evento
     evento.tipo = EVENTO_CONTINUE;
-    evento.valor = VALOR_CONTINUE;
+   // evento.valor = VALOR_CONTINUE;
 }
 
 //----------------------------------------------------
@@ -566,7 +580,7 @@ void inicializarMonitor(Monitor* monitor, long baudRate)
     monitor->estado = ESTADO_MONITOR_ACTUALIZAR_MENSAJE;
 	monitor->configuracion = baudRate;
   	Serial.begin(monitor->configuracion);
-  	BTSerial.begin(monitor->configuracion); //agregado para el bluetooth
+  	BTSerial.begin(9600); //agregado para el bluetooth
 }
 
 void inicializarMotorDesplazamiento(MotorDesplazamiento* motorDesplazamiento, int pinTerminal1, int pinTerminal2, int pinVelocidad)
@@ -622,11 +636,12 @@ void inicializarVariablesGlobales()
 	pulsadorSierraActivado = false;
 	startTime = 0;
     valorDesplazamiento = 0;
-    char caracterLeido = '\0';  // Inicialización con el carácter nulo
+   caracterLeido = '\0';  // Inicialización con el carácter nulo
 }
 
 void start()
 {
+
 	inicializarLedDigital(&ledSierra, PIN_D_LED_SIERRA);
 	inicializarLedDigital(&ledDesplazamiento, PIN_D_LED_DESPLAZAMIENTO);
 	inicializarMonitor(&monitor, BAUD_RATE);
@@ -654,7 +669,7 @@ void verificarLecturaDesdeMonitorSerial()
       case ESTADO_MONITOR_ACTUALIZAR_MENSAJE:
       {
           monitor.mensaje = MENSAJE_INICIO;
-          BTSerial.write("Ingrese la cantidad de desplazamiento (en CM) que debera realizar el motor.\n");
+         // BTSerial.write("Ingrese la cantidad de desplazamiento (en CM) que debera realizar el motor.\n");
           monitor.estado = ESTADO_MONITOR_IMPRIMIR;
           break;
       }
@@ -684,6 +699,7 @@ void verificarLecturaDesdeMonitorSerial()
           break;
       }
 
+
       default:
           break;
   }
@@ -697,14 +713,14 @@ void verificarPulsadoresDeDesplazamiento()
 {
     bool pulsadorIzquierdaPresionado = esPulsadorPresionado(PIN_D_PULSADOR_IZQUIERDA);
     bool pulsadorDerechaPresionado = esPulsadorPresionado(PIN_D_PULSADOR_DERECHA);
-    if (pulsadorIzquierdaPresionado || caracterLeido == 'I')
+    if (pulsadorIzquierdaPresionado )
     {
 	caracterLeido = '\0';								//reseteo
         evento.tipo = EVENTO_DESPLAZAMIENTO_IZQUIERDA;
         ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
         ultrasonidoHorizontal.sentido = SENTIDO_IZQUIERDA;
     }
-    else if (pulsadorDerechaPresionado || caracterLeido == 'D')
+    else if (pulsadorDerechaPresionado )
     {
 	caracterLeido = '\0';								//reseteo
         evento.tipo = EVENTO_DESPLAZAMIENTO_DERECHA;
@@ -715,7 +731,7 @@ void verificarPulsadoresDeDesplazamiento()
 
 void verificarPulsadorDeSierra()
 {
-    if (estadoPulsador == ACTIVAR_SIERRA && (pulsadorSierraActivado || caracterLeido == 'S'))
+    if (estadoPulsador == ACTIVAR_SIERRA && (pulsadorSierraActivado))
     {
         evento.tipo = EVENTO_ACTIVACION_SIERRA;
         estadoPulsador = DETENER_SIERRA;
@@ -790,7 +806,7 @@ void verificarPosicionUltrasonidoHorizontal()
             String(evento.tipo == EVENTO_DESPLAZAMIENTO_IZQUIERDA? "izquierda" : "derecha") + " unos " +
             String(delta) + " CM de " + String(valorDesplazamiento) + " CM."; 
 
-            BTSerial.write(mensaje); //salida por pantalla del dezplazamiento del motor
+           // BTSerial.write("echo"); //salida por pantalla del dezplazamiento del motor
             break;
         }
         
