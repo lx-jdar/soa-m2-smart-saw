@@ -28,23 +28,23 @@
 // ------------------------------------------------
 // Pines Sensores (A = Analógico | D = Digital)
 // ------------------------------------------------
-#define PIN_D_PULSADOR_SIERRA 3
-#define PIN_D_PULSADOR_DERECHA 4
-#define PIN_D_PULSADOR_IZQUIERDA 5
+#define PIN_D_PULSADOR_SIERRA 2
+#define PIN_D_PULSADOR_DERECHA A1
+#define PIN_D_PULSADOR_IZQUIERDA A2
 #define PIN_D_TRIGGER_H 10
 #define PIN_D_ECHO_H 11
 #define PIN_D_TRIGGER_V 12
-#define PIN_D_ECHO_V 13
+#define PIN_D_ECHO_V A0
 
 // ------------------------------------------------
 // Pines Actuadores (P = PWM | D = Digital)
 // ------------------------------------------------
 #define PIN_D_LED_SIERRA 9
-#define PIN_D_LED_DESPLAZAMIENTO A0
+#define PIN_D_LED_DESPLAZAMIENTO 5
 #define PIN_P_MDC_SPEED 6   // Modulacion del PWM M1
 #define PIN_D_MDC_T1 7      // Control Motor P2 L293D, Terminal 1
 #define PIN_D_MDC_T2 8      // Control Motor P2 L293D, Terminal 2
-#define PIN_D_RELE 2
+#define PIN_D_RELE 13
 
 // ------------------------------------------------
 // Estados del Embebido
