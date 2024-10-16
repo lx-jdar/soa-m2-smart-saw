@@ -1,6 +1,8 @@
 # Smart Saw
 Repositorio dedicado al proyecto IoT mediante Arduino y Android.
 
+[Proyecto en Tinkercad](https://www.tinkercad.com/things/itVN8O1GKS4-soa-smart-saw-version-reentrega/editel?sharecode=lJUbeHfQxQ3etaAjRbMZTeHCTKqkXtRYOpYwSJU1qsk)
+
 ## Información de la Asignatura
 * **Materia**: Sistemas Operativos Avanzados (3660)
 * **Cuatrimestre**: Segundo Cuatrimestre
