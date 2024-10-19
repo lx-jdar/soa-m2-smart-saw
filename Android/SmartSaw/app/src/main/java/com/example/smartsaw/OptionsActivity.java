@@ -12,7 +12,13 @@ import android.widget.ImageButton;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
-public class OptionsActivity extends AppCompatActivity {
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+
+public class OptionsActivity extends AppCompatActivity implements SensorEventListener {
 
     //#region Attributes
 
@@ -20,6 +26,10 @@ public class OptionsActivity extends AppCompatActivity {
     private ImageButton buttonConfiguration;
     private ButtonWood buttonPositioning;
     private ImageButton buttonBack;
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private boolean isOn = false;
+    private static final float SHAKE_THRESHOLD = 12.0f; // Ajusta este valor según la sensibilidad
 
     //#endregion
 
@@ -30,6 +40,48 @@ public class OptionsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         initializeView();
         setListeners();
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager != null) {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Registra el listener del sensor cuando la actividad está en primer plano
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Detiene el listener cuando la actividad está en segundo plano
+        sensorManager.unregisterListener(this);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+
+            // Calcula la magnitud de la aceleración
+            float acceleration = (float) Math.sqrt(x * x + y * y + z * z);
+
+            // Si la aceleración excede el umbral, cambia el estado
+            if (acceleration > SHAKE_THRESHOLD) {
+                isOn = !isOn; // Cambia el estado de ON a OFF y viceversa
+                switchOnOff.setChecked(isOn); // Actualiza el Switch en pantalla
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // No es necesario manejar este evento en este caso
     }
 
     //#endregion
