@@ -29,7 +29,7 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private boolean isOn = false;
-    private static final float SHAKE_THRESHOLD = 12.0f; // Ajusta este valor según la sensibilidad
+    private static final float THRESHOLD = 5.0f;
 
     //#endregion
 
@@ -65,23 +65,23 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             float x = event.values[0];
-            float y = event.values[1];
-            float z = event.values[2];
-
-            // Calcula la magnitud de la aceleración
-            float acceleration = (float) Math.sqrt(x * x + y * y + z * z);
-
-            // Si la aceleración excede el umbral, cambia el estado
-            if (acceleration > SHAKE_THRESHOLD) {
-                isOn = !isOn; // Cambia el estado de ON a OFF y viceversa
-                switchOnOff.setChecked(isOn); // Actualiza el Switch en pantalla
+            if (x > THRESHOLD) {
+                if (!isOn) {
+                    isOn = true;
+                    switchOnOff.setChecked(true);
+                }
+            } else if (x < -THRESHOLD) {
+                if (isOn) {
+                    isOn = false;
+                    switchOnOff.setChecked(false);
+                }
             }
         }
     }
 
+
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // No es necesario manejar este evento en este caso
     }
 
     //#endregion
@@ -104,9 +104,9 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
             buttonPositioning.setEnabled(isEnabled);
             buttonBack.setEnabled(isEnabled);
             // DESCOMENTAR UNA VEZ APLICADA LA LOGICA DEL UMBRAL VERTICAL
-            if (isChecked) {
+            /*if (isChecked) {
                 switchOnOff.postDelayed(this::showAlertPopupVerticalLimit, 1000);
-            }
+            }*/
         });
 
         buttonConfiguration.setOnClickListener(v -> {
