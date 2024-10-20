@@ -1,3 +1,5 @@
+#include <Arduino.h>
+#include <SoftwareSerial.h>   // Incluimos la librería  SoftwareSerial
 // ------------------------------------------------
 // Etiquetas
 // ------------------------------------------------
@@ -8,8 +10,8 @@
 // ------------------------------------------------
 #define ACTIVAR_SIERRA 20
 #define BAUD_RATE 9600
-#define CANTIDAD_MAXIMA_DE_ENTRADAS 4
-#define DEBOUNCE_TIME_MS 150
+#define CANTIDAD_MAXIMA_DE_ENTRADAS 5
+#define DEBOUNCE_TIME_MS 200
 #define DETENER_SIERRA 21
 #define MARGEN_DE_ERROR 1L
 #define MODO_PIN_SIERRA FALLING 	// CHANGE, RISING, FALLING
@@ -21,9 +23,9 @@
 // ------------------------------------------------
 // Umbrales Distancia
 // ------------------------------------------------
-#define DISTANCIA_MINIMA_V 150
+#define DISTANCIA_MINIMA_V 5
 #define DISTANCIA_MAXIMA_H 200
-#define DISTANCIA_MINIMA_H 30
+#define DISTANCIA_MINIMA_H 10
 
 // ------------------------------------------------
 // Pines Sensores (A = Analógico | D = Digital)
@@ -35,6 +37,15 @@
 #define PIN_D_ECHO_H 11
 #define PIN_D_TRIGGER_V 12
 #define PIN_D_ECHO_V A0
+
+// ------------------------------------------------
+// Pines Comunicacion Bluetooth
+// ------------------------------------------------
+#define PIN_BLUETOOTH_RX 3
+#define PIN_BLUETOOTH_TX 4
+#define BLUETOOTH_IZQUIERDA 'I'
+#define BLUETOOTH_DERECHA 'D'
+#define BLUETOOTH_SIERRA 'S'
 
 // ------------------------------------------------
 // Pines Actuadores (P = PWM | D = Digital)
@@ -179,6 +190,8 @@ LedDigital ledDesplazamiento;
 
 Monitor monitor;
 
+SoftwareSerial BTSerial(PIN_BLUETOOTH_RX, PIN_BLUETOOTH_TX);
+
 // ------------------------------------------------
 // Logs
 // ------------------------------------------------
@@ -235,6 +248,7 @@ void verificarLecturaDesdeMonitorSerial();
 void verificarPulsadoresDeDesplazamiento();
 void verificarPulsadorDeSierra();
 void verificarPulsadores();
+void verificarBluetooth();
 void verificarPosicionUltrasonidoHorizontal();
 void verificarPosicionUltrasonidoVertical();
 
@@ -246,9 +260,10 @@ void setMensajeAImprimir(String mensaje);
 // Captura de eventos
 // ------------------------------------------------
 void (*verificarEntradas[CANTIDAD_MAXIMA_DE_ENTRADAS])() =
-{ 
+{
     verificarLecturaDesdeMonitorSerial,
     verificarPulsadores,
+	verificarBluetooth,
     verificarPosicionUltrasonidoHorizontal,
     verificarPosicionUltrasonidoVertical,
 };
@@ -256,7 +271,7 @@ void (*verificarEntradas[CANTIDAD_MAXIMA_DE_ENTRADAS])() =
 void obtenerEvento()
 {
     verificarEntradas[entradaActual]();
-    entradaActual = entradaActual < CANTIDAD_MAXIMA_DE_ENTRADAS - 1? entradaActual + 1 : 0; 
+    entradaActual = entradaActual < CANTIDAD_MAXIMA_DE_ENTRADAS - 1? entradaActual + 1 : 0;
 }
 
 // ------------------------------------------------
@@ -300,6 +315,9 @@ void maquinaEstado()
                 case EVENTO_DESPLAZAMIENTO_IZQUIERDA:
                 {
                     log("ESTADO_EMBEBIDO_IDLE", "EVENTO_DESPLAZAMIENTO_IZQUIERDA");
+					encenderMotorDesplazamiento(PIN_D_PULSADOR_IZQUIERDA);
+					encenderLed(&ledDesplazamiento);
+					setMensajeAImprimir("Pulsador izquierdo presionado. Desplazando motor a izquierda.");
                     estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
                 }
@@ -307,6 +325,9 @@ void maquinaEstado()
                 case EVENTO_DESPLAZAMIENTO_DERECHA:
                 {
                     log("ESTADO_EMBEBIDO_IDLE", "EVENTO_DESPLAZAMIENTO_DERECHA");
+                    encenderMotorDesplazamiento(PIN_D_PULSADOR_DERECHA);
+					encenderLed(&ledDesplazamiento);
+					setMensajeAImprimir("Pulsador derecho presionado. Desplazando motor a derecha.");
                     estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
                 }
@@ -316,7 +337,7 @@ void maquinaEstado()
                     log("ESTADO_EMBEBIDO_IDLE", "EVENTO_ACTIVACION_SIERRA");
                     encenderMotorSierra();
                     encenderLed(&ledSierra);
-                    setMensajeAImprimir("Pulsador sierrra encendida. Cortando ...");
+                    setMensajeAImprimir("Pulsador SIERRA encendida. Cortando ...");
                     estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
                     break;
                 }
@@ -331,7 +352,7 @@ void maquinaEstado()
                 default:
 				{
 					log("ESTADO_EMBEBIDO_IDLE", "EVENTO_NO_RECONOCIDO");
-					break;					
+					break;
 				}
             }
             break;
@@ -342,26 +363,6 @@ void maquinaEstado()
         {
             switch (evento.tipo)
             {
-                case EVENTO_DESPLAZAMIENTO_IZQUIERDA:
-                {
-                    log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_DESPLAZAMIENTO_IZQUIERDA");
-                    encenderMotorDesplazamiento(PIN_D_PULSADOR_IZQUIERDA);
-                    encenderLed(&ledDesplazamiento);
-                    setMensajeAImprimir("Pulsador izquierdo presionado. Desplazando motor a izquierda.");
-                    estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
-                    break;
-                }
-                
-                case EVENTO_DESPLAZAMIENTO_DERECHA:
-                {
-                    log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_DESPLAZAMIENTO_DERECHA");
-                    encenderMotorDesplazamiento(PIN_D_PULSADOR_DERECHA);
-                    encenderLed(&ledDesplazamiento);
-                    setMensajeAImprimir("Pulsador derecho presionado. Desplazando motor a derecha.");
-                    estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
-                    break;
-                }
-                
                 case EVENTO_POSICION_FINALIZADA:
                 {
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_POSICION_FINALIZADA");
@@ -373,7 +374,7 @@ void maquinaEstado()
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
                     break;
                 }
-                
+
                 case EVENTO_LIMITE_HORIZONTAL_SUPERADO:
                 {
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_LIMITE_HORIZONTAL_SUPERADO");
@@ -385,18 +386,18 @@ void maquinaEstado()
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
                     break;
                 }
-                
+
                 case EVENTO_CONTINUE:
                 {
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_CONTINUE");
                     estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
                 }
-                
+
                 default:
 				{
 					log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_NO_RECONOCIDO");
-					break;					
+					break;
 				}
             }
             break;
@@ -406,7 +407,7 @@ void maquinaEstado()
         case ESTADO_EMBEBIDO_SIERRA_ACTIVA:
         {
             switch (evento.tipo)
-            {                
+            {
                 case EVENTO_SIERRA_DETENIDA:
                 {
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_SIERRA_DETENIDA");
@@ -418,7 +419,7 @@ void maquinaEstado()
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
                     break;
                 }
-                
+
                 case EVENTO_LIMITE_VERTICAL_SUPERADO:
                 {
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_LIMITE_VERTICAL_SUPERADO");
@@ -430,18 +431,18 @@ void maquinaEstado()
                     estadoEmbebido = ESTADO_EMBEBIDO_IDLE;
                     break;
                 }
-                
+
                 case EVENTO_CONTINUE:
 				{
 					log("ESTADO_EMBEBIDO_IDLE", "EVENTO_CONTINUE");
 					estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
 					break;
 				}
-                
+
 				default:
 				{
 					log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_NO_RECONOCIDO");
-					break;					
+					break;
 				}
             }
             break;
@@ -450,7 +451,7 @@ void maquinaEstado()
         default:
             break;
     }
-    
+
     // Ya se atendió el evento
     evento.tipo = EVENTO_CONTINUE;
     evento.valor = VALOR_CONTINUE;
@@ -493,6 +494,7 @@ void inicializarMonitor(Monitor* monitor, long baudRate)
     monitor->estado = ESTADO_MONITOR_ACTUALIZAR_MENSAJE;
 	monitor->configuracion = baudRate;
   	Serial.begin(monitor->configuracion);
+  	BTSerial.begin(monitor->configuracion);      // Inicializamos el puerto serie BT que hemos creado
 }
 
 void inicializarMotorDesplazamiento(MotorDesplazamiento* motorDesplazamiento, int pinTerminal1, int pinTerminal2, int pinVelocidad)
@@ -528,6 +530,7 @@ void inicializarMotorSierra(MotorSierra* motorSierra, int pinRele)
 	motorSierra->pinRele = pinRele;
 	motorSierra->estado = ESTADO_MOTOR_APAGADO;
     pinMode(motorSierra->pinRele, OUTPUT);
+    digitalWrite(motorSierra->pinRele, HIGH);
 }
 
 void inicializarPulsadores()
@@ -582,14 +585,16 @@ void verificarLecturaDesdeMonitorSerial()
             monitor.estado = ESTADO_MONITOR_IMPRIMIR;
             break;
         }
-        
+
         case ESTADO_MONITOR_IMPRIMIR:
         {
-            Serial.println(monitor.mensaje);
+        	Serial.print(monitor.mensaje);
+			monitor.mensaje="\n";
+			Serial.print(monitor.mensaje);
             monitor.estado = ESTADO_MONITOR_ESPERANDO_INGRESO;
             break;
         }
-        
+
         case ESTADO_MONITOR_ESPERANDO_INGRESO:
         {
             if (Serial.available())
@@ -599,8 +604,13 @@ void verificarLecturaDesdeMonitorSerial()
             }
             break;
         }
-        
+
         default:
+        	Serial.println("-----------------------------------------------------");
+			Serial.println("Estado del Monitor no reconocido...");
+			Serial.println(monitor.estado);
+			Serial.println(monitor.input);
+			Serial.println("-----------------------------------------------------");
             break;
     }
 }
@@ -630,7 +640,7 @@ void verificarPulsadorDeSierra()
 {
     if (estadoPulsador == ACTIVAR_SIERRA && pulsadorSierraActivado)
     {
-        evento.tipo = EVENTO_ACTIVACION_SIERRA;
+    	evento.tipo = EVENTO_ACTIVACION_SIERRA;
         estadoPulsador = DETENER_SIERRA;
         pulsadorSierraActivado = false;
         ultrasonidoVertical.estado = ESTADO_ULT_LONGITUD_PERMITIDA;
@@ -650,6 +660,56 @@ void verificarPulsadores()
 {
     verificarPulsadoresDeDesplazamiento();
     verificarPulsadorDeSierra();
+}
+
+boolean isValidNumber(String str)
+{
+	for(int i=0; i<str.length();i++)
+	{
+		if(isDigit(str.charAt(i))) return true;
+	}
+	return false;
+}
+
+
+void verificarBluetooth()
+{
+	if(BTSerial.available())    // Si llega un dato por el puerto BT se envía al monitor serial
+	{
+        String btInput = BTSerial.readStringUntil('\n');
+        if (btInput.indexOf(BLUETOOTH_IZQUIERDA) == 0) {
+        	monitor.mensaje = "Se ingresó el caracter: I";
+        	evento.tipo = EVENTO_DESPLAZAMIENTO_IZQUIERDA;
+			ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
+			ultrasonidoHorizontal.sentido = SENTIDO_IZQUIERDA;
+        }
+        else if (btInput.indexOf(BLUETOOTH_DERECHA) == 0)
+        {
+        	monitor.mensaje = "Se ingresó el caracter: D";
+        	evento.tipo = EVENTO_DESPLAZAMIENTO_DERECHA;
+			ultrasonidoHorizontal.estado = ESTADO_ULT_EN_MOVIMIENTO;
+			ultrasonidoHorizontal.sentido = SENTIDO_DERECHA;
+        }
+        else if (btInput.indexOf(BLUETOOTH_SIERRA) == 0)
+		{
+			monitor.mensaje = "Se ingresó el caracter: S";
+			ISR_Boton();
+		}
+        else if (btInput.indexOf('R') == 0)
+		{
+			monitor.mensaje = "Se ingresó el caracter: R";
+			ultrasonidoHorizontal.estado = ESTADO_ULT_DETENIDO;
+			ultrasonidoHorizontal.sentido = SIN_MOVIMIENTO;
+		}
+        else if (isValidNumber(btInput))
+        {
+        	monitor.input = btInput;
+        	monitor.mensaje = "Se recicibió por BT el nro: " + monitor.input;
+        	evento.tipo = EVENTO_INTRODUCCION_DE_DISTANCIA;
+        }
+
+        monitor.estado = ESTADO_MONITOR_IMPRIMIR;
+	}
 }
 
 void verificarLimitesHorizontales()
@@ -682,14 +742,14 @@ void verificarPosicionUltrasonidoHorizontal()
 			}
             break;
         }
-        
+
         case ESTADO_ULT_EN_MOVIMIENTO:
         {
             posicionActual = ultrasonidoHorizontal.cm;
             log("Posicion actual Ultrasonido Horizontal: " + String(posicionActual) + " CM.");
             int delta = abs(posicionActual - ultrasonidoHorizontal.posicionPartida);
             if (delta >= valorDesplazamiento)
-            {  
+            {
                 ultrasonidoHorizontal.estado = ESTADO_ULT_DETENIDO;
                 return;
             }
@@ -698,7 +758,7 @@ void verificarPosicionUltrasonidoHorizontal()
             String(delta) + " CM de " + String(valorDesplazamiento) + " CM.");
             break;
         }
-        
+
         case ESTADO_ULT_DETENIDO:
         {
             ultrasonidoHorizontal.posicionPartida = ultrasonidoHorizontal.cm;
@@ -708,7 +768,7 @@ void verificarPosicionUltrasonidoHorizontal()
             }
             break;
         }
-     
+
         default:
             break;
     }
@@ -727,14 +787,14 @@ void verificarPosicionUltrasonidoVertical()
 			if (posicionActual <= DISTANCIA_MINIMA_V) ultrasonidoVertical.estado = ESTADO_ULT_UMBRAL_SUPERADO;
 			break;
 		}
-		
+
 		case ESTADO_ULT_UMBRAL_SUPERADO:
 		{
 			ultrasonidoVertical.estado = ESTADO_ULT_DETENIDO;
 			evento.tipo = EVENTO_LIMITE_VERTICAL_SUPERADO;
 			break;
 		}
-			
+
 		default:
 			break;
 	}
@@ -792,16 +852,17 @@ void encenderMotorSierra()
 {
     if(motorSierra.estado == ESTADO_MOTOR_APAGADO)
 	{
-		digitalWrite(motorSierra.pinRele, HIGH);
+		digitalWrite(motorSierra.pinRele, LOW);
 		motorSierra.estado = ESTADO_MOTOR_PRENDIDO;
 	}
+    Serial.println("Encender Cierra!");
 }
 
 void detenerMotorSierra()
 {
 	if(motorSierra.estado == ESTADO_MOTOR_PRENDIDO)
 	{
-		digitalWrite(motorSierra.pinRele, LOW);
+		digitalWrite(motorSierra.pinRele, HIGH);
 		motorSierra.estado = ESTADO_MOTOR_APAGADO;
 	}
 }
