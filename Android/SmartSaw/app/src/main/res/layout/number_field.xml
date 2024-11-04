@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         android:textSize="25sp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp" />

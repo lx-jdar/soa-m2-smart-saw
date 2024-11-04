@@ -5,8 +5,18 @@
     android:id="@+id/movement"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/beige"
     tools:context=".MovementActivity">
+
+    <ImageView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/background_forest_nigth"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="ContentDescription" />
 
     <TextView
         android:id="@+id/title_movement"
@@ -15,7 +25,7 @@
         android:layout_marginTop="50dp"
         android:text="@string/direction_of_movement"
         android:textAlignment="center"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         android:textSize="30sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -39,7 +49,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:text="@string/left"
-            android:textColor="@color/black"
+            android:textColor="@color/white"
             android:textSize="30sp"
             app:buttonTint="@color/black" />
 
@@ -48,7 +58,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/rigth"
-            android:textColor="@color/black"
+            android:textColor="@color/white"
             android:textSize="30sp"
             app:buttonTint="@color/black" />
 
