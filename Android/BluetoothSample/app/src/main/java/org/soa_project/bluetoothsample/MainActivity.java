@@ -54,11 +54,10 @@ public class MainActivity extends Activity
             android.Manifest.permission.BLUETOOTH_SCAN,
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             android.Manifest.permission.ACCESS_FINE_LOCATION,
-            //android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            //android.Manifest.permission.READ_PHONE_STATE,
-            //Manifest.permission.READ_EXTERNAL_STORAGE,
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            android.Manifest.permission.READ_PHONE_STATE,
+            //android.Manifest.permission.READ_EXTERNAL_STORAGE,
     };
-
 
     @Override
     //Metodo On create
