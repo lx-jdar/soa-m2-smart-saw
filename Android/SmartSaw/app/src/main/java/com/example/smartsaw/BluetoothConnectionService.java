@@ -5,7 +5,8 @@ import android.content.Context;
 import androidx.appcompat.app.AppCompatActivity;
 
 public interface BluetoothConnectionService {
-    public static final String ACTION_DATA_RECEIVE ="smartsaw.intent.DATA_RECEIVE";
+
+    public final String ACTION_DATA_RECEIVE ="smartsaw.intent.DATA_RECEIVE";
 
     void setActivity(AppCompatActivity activity);
 
@@ -14,5 +15,7 @@ public interface BluetoothConnectionService {
     void onCreateBluetooth();
 
     void onResumeBluetooth();
+
+    void sendMessageToEmbedded(String msg);
 
 }

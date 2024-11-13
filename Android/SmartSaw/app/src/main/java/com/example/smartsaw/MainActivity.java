@@ -20,10 +20,8 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
 
     private ButtonWood buttonStartSystem;
     private BluetoothConnectionService connectionBtService;
-    private BTMessageBroadcastReceiver receiver;
     private boolean isConnected = false;
-
-
+    private BTMessageBroadcastReceiver receiver;
     //#endregion
 
     //#region Activity Methods
@@ -73,6 +71,8 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Desregistrar el receptor local para evitar fugas de memoria
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
     }
     //#endregion
 

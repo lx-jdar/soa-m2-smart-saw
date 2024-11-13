@@ -16,12 +16,21 @@ public class BTMessageBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (BluetoothConnectionService.ACTION_DATA_RECEIVE.equals(intent.getAction())) {
-            String actity = intent.getStringExtra("TOPIC");
-            String valor = intent.getStringExtra("DATA");
-            // Usar el valor recibido
-            Toast.makeText(context, "Valor recibido: " + valor, Toast.LENGTH_SHORT).show();
-            // Notificar al listener
-            listener.onReceive(valor);
+            String activity = intent.getStringExtra("TOPIC");
+            if (activity.equals("MAIN_ACTIVITY")) {
+                String valor = intent.getStringExtra("DATA");
+                // Notificar al listener
+                listener.onReceive(valor);
+            } else if (activity.equals("OPTIONS_ACTIVITY")) {
+                String valor = intent.getStringExtra("DATA");
+                // Notificar al listener
+                listener.onReceive(valor);
+            } else if (activity.equals("MOVEMENTS_ACTIVITY")) {
+                String valor = intent.getStringExtra("DATA");
+                // Notificar al listener
+                listener.onReceive(valor);
+            }
+
         }
     }
 

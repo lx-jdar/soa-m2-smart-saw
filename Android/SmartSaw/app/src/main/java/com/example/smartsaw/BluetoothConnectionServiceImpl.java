@@ -50,7 +50,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
     private static String[] permissions= new String[] {
             android.Manifest.permission.BLUETOOTH,
             android.Manifest.permission.BLUETOOTH_ADMIN,
-            android.Manifest.permission.BLUETOOTH_CONNECT,
+            //android.Manifest.permission.BLUETOOTH_CONNECT,
             //android.Manifest.permission.BLUETOOTH_SCAN,
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             android.Manifest.permission.ACCESS_FINE_LOCATION,
@@ -126,6 +126,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
             public void handleMessage(@NonNull android.os.Message msg)
             {
                 //si se recibio un msj del hilo secundario
+                recDataString.delete(0,recDataString.length());
                 if (msg.what == handlerState)
                 {
                     //voy concatenando el msj
@@ -138,6 +139,9 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
                         String dataInPrint = recDataString.substring(0, endOfLineIndex);
                         //txtPotenciometro.setText(dataInPrint);
                         recDataString.delete(0, recDataString.length());
+                    }
+                    if (recDataString.toString().equals("OK")) {
+                        broadcastMessage(recDataString.toString(), "OPTIONS_ACTIVITY");
                     }
                 }
             }
@@ -165,7 +169,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         catch (IOException e)
         {
             showToast("La creacción del Socket fallo");
-            broadcastMessage("La creacción del Socket fallo", "ACT_1");
+            broadcastMessage("La creacción del Socket fallo", "MAIN_ACTIVITY");
         }
 
         // Establish the Bluetooth socket connection.
@@ -184,6 +188,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
             {
                 //insert code to deal with this
             }
+            broadcastMessage("La creacción del Socket fallo", "MAIN_ACTIVITY");
         }
 
         //Una establecida la conexion con el Hc05 se crea el hilo secundario, el cual va a recibir
@@ -192,8 +197,8 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         mConnectedThread.start();
         //I send a character when resuming.beginning transmission to check device is connected
         //If it is not an exception will be thrown in the write method and finish() will be called
-        mConnectedThread.write("S");
-        broadcastMessage("Connected", "ACT_1");
+        //mConnectedThread.write("S");
+        broadcastMessage("Connected", "MAIN_ACTIVITY");
     }
 
     public void onPauseBluetooth() {
@@ -217,6 +222,10 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         // Enviar el broadcast local
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
 
+    }
+
+    public void sendMessageToEmbedded(String msg) {
+        mConnectedThread.write(msg);
     }
 
     public  void onStopBluetooth() {

@@ -1,25 +1,23 @@
 package com.example.smartsaw;
 
 import android.annotation.SuppressLint;
-
-import androidx.appcompat.app.AlertDialog;
-
-import android.content.Intent;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.ImageButton;
-
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SwitchCompat;
-
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-public class OptionsActivity extends AppCompatActivity implements SensorEventListener {
-
+public class OptionsActivity extends AppCompatActivity implements SensorEventListener, BTMessageBroadcastReceiver.BTMessageListener {
     //#region Attributes
 
     private SwitchCompat switchOnOff;
@@ -30,6 +28,10 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     private Sensor accelerometer;
     private boolean isOn = false;
     private static final float THRESHOLD = 5.0f;
+
+    private BluetoothConnectionService connectionBtService;
+
+    private BTMessageBroadcastReceiver receiver;
 
     //#endregion
 
@@ -45,13 +47,21 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         if (sensorManager != null) {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         }
+
+        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
+        connectionBtService.setActivity(this);
+        connectionBtService.setContext(getApplicationContext());
+
+        // Registrar el receptor
+        receiver = new BTMessageBroadcastReceiver(this);
+        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     protected void onResume() {
         super.onResume();
-        // Registra el listener del sensor cuando la actividad está en primer plano
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -62,6 +72,13 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Desregistrar el receptor local para evitar fugas de memoria
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
+    }
+
+    @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             float x = event.values[0];
@@ -69,11 +86,13 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
                 if (!isOn) {
                     isOn = true;
                     switchOnOff.setChecked(true);
+                    connectionBtService.sendMessageToEmbedded("S");
                 }
             } else if (x < -THRESHOLD) {
                 if (isOn) {
                     isOn = false;
                     switchOnOff.setChecked(false);
+                    connectionBtService.sendMessageToEmbedded("S");
                 }
             }
         }
@@ -107,6 +126,11 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
             /*if (isChecked) {
                 switchOnOff.postDelayed(this::showAlertPopupVerticalLimit, 1000);
             }*/
+            if (isEnabled) {
+                connectionBtService.sendMessageToEmbedded("S");
+            } else {
+                connectionBtService.sendMessageToEmbedded("S");
+            }
         });
 
         buttonConfiguration.setOnClickListener(v -> {
@@ -148,6 +172,15 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
                 })
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show();
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onReceive(String valor) {
+        Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
     }
 
     //#endregion
