@@ -58,10 +58,12 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
     }
 
-    @SuppressLint("MissingPermission")
     @Override
     protected void onResume() {
         super.onResume();
+        if (accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
     }
 
     @Override
@@ -98,10 +100,8 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         }
     }
 
-
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
+    public void onAccuracyChanged(Sensor sensor, int accuracy) { }
 
     //#endregion
 

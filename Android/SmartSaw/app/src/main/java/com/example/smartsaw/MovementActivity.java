@@ -18,9 +18,8 @@ public class MovementActivity extends AppCompatActivity {
     //#region Attributes
 
     public static final int TIME_TEST_LOADING_PROGRESS_BAR = 3000;
-    public static final int ID_RADIO_BUTTON_NOT_SELECTED = -1;
-    private RadioGroup radioGroup;
-    private ButtonWood buttonMovement;
+    private ButtonWood buttonLeftMovement;
+    private ButtonWood buttonRightMovement;
     private ImageButton buttonBack;
     private ImageButton buttonHome;
 
@@ -41,21 +40,23 @@ public class MovementActivity extends AppCompatActivity {
 
     private void initializeView() {
         setContentView(R.layout.activity_movement);
-        radioGroup = findViewById(R.id.radio_group_movements);
-        buttonMovement = findViewById(R.id.btn_start_movement);
-        buttonMovement.setButtonText(getString(R.string.move));
+        buttonLeftMovement = findViewById(R.id.btn_left_movement);
+        buttonLeftMovement.setButtonText(getString(R.string.left));
+        buttonLeftMovement.setButtonImageResource(R.drawable.btn_wood_left_selector);
+        buttonRightMovement = findViewById(R.id.btn_right_movement);
+        buttonRightMovement.setButtonText(getString(R.string.rigth));
+        buttonRightMovement.setButtonImageResource(R.drawable.btn_wood_right_selector);
         buttonBack = findViewById(R.id.btn_movement_back);
         buttonHome = findViewById(R.id.btn_home);
     }
 
     private void setListeners() {
-        buttonMovement.setButtonOnClickListener(v -> {
-            int selectedId = radioGroup.getCheckedRadioButtonId();
-            if (selectedId == ID_RADIO_BUTTON_NOT_SELECTED) {
-                Toast.makeText(MovementActivity.this, getString(R.string.indicate_a_direction_movement), Toast.LENGTH_SHORT).show();
-            } else {
-                showMovementSawPopups();
-            }
+        buttonLeftMovement.setButtonOnClickListener(v -> {
+            showMovementSawPopups();
+        });
+
+        buttonRightMovement.setButtonOnClickListener(v -> {
+            showMovementSawPopups();
         });
 
         buttonBack.setOnClickListener(v -> {
@@ -72,7 +73,8 @@ public class MovementActivity extends AppCompatActivity {
     }
 
     private void showMovementSawPopups() {
-        buttonMovement.setEnabled(false);
+        buttonLeftMovement.setEnabled(false);
+        buttonRightMovement.setEnabled(false);
         buttonBack.setEnabled(false);
         buttonHome.setEnabled(false);
         AlertDialog dialogMovingSaw = getPopupMovingSawPopup();
@@ -98,7 +100,8 @@ public class MovementActivity extends AppCompatActivity {
             builderAccept.setIcon(android.R.drawable.ic_dialog_alert);
             builderAccept.setPositiveButton(getString(android.R.string.ok), (dialogMoveCompleted, which) -> {
                 dialogMoveCompleted.dismiss();
-                buttonMovement.setEnabled(true);
+                buttonLeftMovement.setEnabled(true);
+                buttonRightMovement.setEnabled(true);
                 buttonBack.setEnabled(true);
                 buttonHome.setEnabled(true);
             });

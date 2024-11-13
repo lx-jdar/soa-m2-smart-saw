@@ -42,6 +42,10 @@ public class ButtonWood extends FrameLayout {
         image.setOnClickListener(listener);
     }
 
+    public void setButtonImageResource(int resId) {
+        image.setImageResource(resId);
+    }
+
     //#endregion
 
     //#region Private Methods

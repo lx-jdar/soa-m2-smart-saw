@@ -33,46 +33,23 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="TextSizeCheck" />
 
-    <RadioGroup
-        android:id="@+id/radio_group_movements"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.15"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/title_movement">
-
-        <RadioButton
-            android:id="@+id/radio_button_left"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="@string/left"
-            android:textColor="@color/white"
-            android:textSize="30sp"
-            app:buttonTint="@color/black" />
-
-        <RadioButton
-            android:id="@+id/radio_button_right"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/rigth"
-            android:textColor="@color/white"
-            android:textSize="30sp"
-            app:buttonTint="@color/black" />
-
-    </RadioGroup>
-
     <com.example.smartsaw.ButtonWood
-        android:id="@+id/btn_start_movement"
+        android:id="@+id/btn_left_movement"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="100dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/radio_group_movements" />
+        app:layout_constraintTop_toBottomOf="@id/title_movement" />
+
+    <com.example.smartsaw.ButtonWood
+        android:id="@+id/btn_right_movement"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="100dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_left_movement" />
 
     <ImageButton
         android:id="@+id/btn_movement_back"

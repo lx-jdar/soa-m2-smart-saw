@@ -13,7 +13,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-
 public class MainActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener {
 
     //#region Attributes
@@ -22,6 +21,7 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
     private BluetoothConnectionService connectionBtService;
     private boolean isConnected = false;
     private BTMessageBroadcastReceiver receiver;
+
     //#endregion
 
     //#region Activity Methods
@@ -31,8 +31,6 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
         super.onCreate(savedInstanceState);
         initializeView();
         buttonStartSystem.setButtonOnClickListener(buttonListener);
-
-
         if (BluetoothConnectionServiceImpl.checkPermissions(this))
         {
             connectionBtService = BluetoothConnectionServiceImpl.getInstance();
