@@ -58,6 +58,7 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     protected void onResume() {
         super.onResume();
@@ -100,8 +101,10 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         }
     }
 
+
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) { }
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
 
     //#endregion
 
@@ -116,21 +119,27 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         buttonPositioning.setButtonText(getString(R.string.position_saw));
     }
 
-    private void setListeners() {
-        switchOnOff.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            boolean isEnabled = !isChecked;
-            buttonConfiguration.setEnabled(isEnabled);
-            buttonPositioning.setEnabled(isEnabled);
-            buttonBack.setEnabled(isEnabled);
-            // DESCOMENTAR UNA VEZ APLICADA LA LOGICA DEL UMBRAL VERTICAL
+    private void setSawAction(boolean isChecked) {
+        boolean isEnabled = !isChecked;
+        buttonConfiguration.setEnabled(isEnabled);
+        buttonPositioning.setEnabled(isEnabled);
+        buttonBack.setEnabled(isEnabled);
+        // DESCOMENTAR UNA VEZ APLICADA LA LOGICA DEL UMBRAL VERTICAL
             /*if (isChecked) {
                 switchOnOff.postDelayed(this::showAlertPopupVerticalLimit, 1000);
             }*/
-            if (isEnabled) {
-                connectionBtService.sendMessageToEmbedded("S");
-            } else {
-                connectionBtService.sendMessageToEmbedded("S");
-            }
+        if (isEnabled) {
+            connectionBtService.sendMessageToEmbedded(EmbeddedCode.S.toString());
+        } else {
+            connectionBtService.sendMessageToEmbedded(EmbeddedCode.T.toString());
+        }
+    }
+
+    private void setListeners() {
+        switchOnOff.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            this.setSawAction(isChecked);
+
+
         });
 
         buttonConfiguration.setOnClickListener(v -> {
@@ -179,8 +188,26 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     }
 
     @Override
-    public void onReceive(String valor) {
-        Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
+    public void onReceive(Intent intent) {
+
+        // Modificar la variable personalizada
+        String activity = intent.getStringExtra("TOPIC");
+        if (activity != null && activity.equals("OPTIONS_ACTIVITY")) {
+            String valor = intent.getStringExtra("DATA");
+            Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
+            this.processEmbeddedAction(valor);
+
+        }
+    }
+
+    private void processEmbeddedAction(String action) {
+        if (EmbeddedCode.SOFF.getValue().equals(action)) {
+            this.setSawAction(false);
+        } else if (EmbeddedCode.SON.getValue().equals(action)) {
+            this.setSawAction(true); // Ejemplo para otro caso
+        } else {
+            Toast.makeText(getApplicationContext(), "Acción desconocida: "+action, Toast.LENGTH_SHORT).show();
+        }
     }
 
     //#endregion

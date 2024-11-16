@@ -1,13 +1,15 @@
 package com.example.smartsaw;
 
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-public class ConfigurationActivity extends AppCompatActivity {
+public class ConfigurationActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener {
 
     //#region Attributes
 
@@ -18,6 +20,8 @@ public class ConfigurationActivity extends AppCompatActivity {
     private NumberField errorMargin;
     private ImageButton buttonBack;
     private ButtonWood buttonSaveChanges;
+    private BluetoothConnectionService connectionBtService;
+    private BTMessageBroadcastReceiver receiver;
 
     //#endregion
 
@@ -28,6 +32,22 @@ public class ConfigurationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         initializeView();
         setListeners();
+
+        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
+        connectionBtService.setActivity(this);
+        connectionBtService.setContext(getApplicationContext());
+
+        // Registrar el receptor
+        receiver = new BTMessageBroadcastReceiver(this);
+        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Desregistrar el receptor local para evitar fugas de memoria
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
     }
 
     //#endregion
@@ -76,6 +96,16 @@ public class ConfigurationActivity extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void onReceive(Intent intent) {
+        // Modificar la variable personalizada
+        String activity = intent.getStringExtra("TOPIC");
+        if (activity != null && activity.equals("CONFIG_ACTIVITY")) {
+            String valor = intent.getStringExtra("DATA");
+            Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
+        }
     }
 
     //#endregion

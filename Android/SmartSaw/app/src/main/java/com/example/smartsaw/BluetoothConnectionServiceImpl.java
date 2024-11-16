@@ -59,8 +59,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
             //android.Manifest.permission.READ_EXTERNAL_STORAGE,
     };
 
-    private BluetoothConnectionServiceImpl() {
-    }
+    private BluetoothConnectionServiceImpl() { }
 
     public void setActivity(AppCompatActivity activity) {
         this.activity = activity;
@@ -141,7 +140,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
                         recDataString.delete(0, recDataString.length());
                     }
                     if (recDataString.toString().equals("OK")) {
-                        broadcastMessage(recDataString.toString(), "OPTIONS_ACTIVITY");
+                        broadcastMessage("OPTIONS_ACTIVITY", recDataString.toString());
                     }
                 }
             }
@@ -169,7 +168,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         catch (IOException e)
         {
             showToast("La creacción del Socket fallo");
-            broadcastMessage("La creacción del Socket fallo", "MAIN_ACTIVITY");
+            broadcastMessage("MAIN_ACTIVITY","La creacción del Socket fallo");
         }
 
         // Establish the Bluetooth socket connection.
@@ -188,7 +187,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
             {
                 //insert code to deal with this
             }
-            broadcastMessage("La creacción del Socket fallo", "MAIN_ACTIVITY");
+            broadcastMessage("MAIN_ACTIVITY","La creacción del Socket fallo");
         }
 
         //Una establecida la conexion con el Hc05 se crea el hilo secundario, el cual va a recibir
@@ -198,7 +197,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         //I send a character when resuming.beginning transmission to check device is connected
         //If it is not an exception will be thrown in the write method and finish() will be called
         //mConnectedThread.write("S");
-        broadcastMessage("Connected", "MAIN_ACTIVITY");
+        broadcastMessage("MAIN_ACTIVITY", "Connected");
     }
 
     public void onPauseBluetooth() {
@@ -212,7 +211,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         }
     }
 
-    private void broadcastMessage(String msg, String activity) {
+    private void broadcastMessage(String activity, String msg) {
         //Se envian los valores sensados por el potenciometro, al bradcast reciever de la activity principal
         Intent intent = new Intent(ACTION_DATA_RECEIVE);
         intent.putExtra("TOPIC", activity);

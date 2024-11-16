@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+
 public class MainActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener {
 
     //#region Attributes
@@ -21,7 +22,6 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
     private BluetoothConnectionService connectionBtService;
     private boolean isConnected = false;
     private BTMessageBroadcastReceiver receiver;
-
     //#endregion
 
     //#region Activity Methods
@@ -31,6 +31,8 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
         super.onCreate(savedInstanceState);
         initializeView();
         buttonStartSystem.setButtonOnClickListener(buttonListener);
+
+
         if (BluetoothConnectionServiceImpl.checkPermissions(this))
         {
             connectionBtService = BluetoothConnectionServiceImpl.getInstance();
@@ -42,6 +44,8 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
             receiver = new BTMessageBroadcastReceiver(this);
             IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
             LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
+        } else {
+            finish();
         }
     }
 
@@ -99,9 +103,13 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
     };
 
     @Override
-    public void onReceive(String valor) {
+    public void onReceive(Intent intent) {
         // Modificar la variable personalizada
-        isConnected = valor.equals("Connected");
+        String activity = intent.getStringExtra("TOPIC");
+        if (activity != null && activity.equals("MAIN_ACTIVITY")) {
+            String valor = intent.getStringExtra("DATA");
+            isConnected = (valor != null && valor.equals("Connected"));
+        }
     }
 
     //#endregion
