@@ -8,6 +8,12 @@ public enum ActivityType {
     MOVEMENT_ACTIVITY("MOVEMENT_ACTIVITY"),
     ;
 
-    ActivityType(String mainActivity) {
+    private final String activityValue;
+    ActivityType(String activityValue) {
+        this.activityValue=activityValue;
+    }
+
+    public String getValue() {
+        return activityValue;
     }
 }

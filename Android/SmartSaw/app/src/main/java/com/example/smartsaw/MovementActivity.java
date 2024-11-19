@@ -14,7 +14,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-public class MovementActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener {
+public class MovementActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener  {
 
     //#region Attributes
 
@@ -31,38 +31,31 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
     //#endregion
 
     //#region Activity Methods
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initializeView();
         setListeners();
-        setConnectionService();
-        setBroadcastConfiguration();
+
+        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
+        connectionBtService.setActivity(this);
+        connectionBtService.setContext(getApplicationContext());
+
+        // Registrar el receptor
+        receiver = new BTMessageBroadcastReceiver(this);
+        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Desregistrar el receptor local para evitar fugas de memoria
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
     }
-
     //#endregion
 
     //#region Private Methods
-
-    private void setConnectionService() {
-        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
-        connectionBtService.setActivity(this);
-        connectionBtService.setContext(getApplicationContext());
-    }
-
-    private void setBroadcastConfiguration() {
-        receiver = new BTMessageBroadcastReceiver(this);
-        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
-    }
-
     private void initializeView() {
         setContentView(R.layout.activity_movement);
         buttonLeftMovement = findViewById(R.id.btn_left_movement);
@@ -113,28 +106,37 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             LayoutInflater inflater = getLayoutInflater();
             View dialogView = inflater.inflate(R.layout.dialog_movement, null);
+
             progressBar = dialogView.findViewById(R.id.progress_bar);
-            progressBar.setMax(100);
-            progressBar.setProgress(0);
+            progressBar.setMax(100); // Establecer el máximo (100%) para el progreso
+            progressBar.setProgress(0); // Comienza en 0%
+
             builder.setView(dialogView);
-            builder.setCancelable(false);
+            builder.setCancelable(false); // Evitar que se pueda cerrar tocando fuera del dialogo
             progressDialog = builder.create();
         }
+
         progressDialog.show();
-        new Thread(this::simulateProgress).start();
+        // Simula el progreso en un hilo separado
+        //new Thread(() -> simulateProgress()).start();
     }
 
     private void simulateProgress() {
         for (int i = 0; i <= 100; i++) {
             try {
+                // Simula el tiempo de ejecución (por ejemplo, un retraso de 50ms por cada incremento)
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            final int progress = i;
-            runOnUiThread(() -> progressBar.setProgress(progress));
+
+            final int progress = i;  // Hacemos que el valor de 'i' sea final
+            // Actualiza el progreso en la UI
+            runOnUiThread(() -> progressBar.setProgress(progress));  // Usamos 'progress' que es final
         }
-        runOnUiThread(this::dismissProgressDialog);
+
+        // Después de que el progreso llega al 100%, cierra el diálogo
+        runOnUiThread(() -> dismissProgressDialog());
     }
 
     private void dismissProgressDialog() {
@@ -162,28 +164,26 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
 
     @Override
     public void onReceive(Intent intent) {
+
+        // Modificar la variable personalizada
         String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
         if (activity != null && activity.equals(ActivityType.MOVEMENT_ACTIVITY.toString())) {
             String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
             processEmbeddedAction(valor);
-            showToast("Se recibió " + valor);
+            Toast.makeText(getApplicationContext(), "Se recibió "+valor, Toast.LENGTH_SHORT).show();
         }
     }
 
     private void processEmbeddedAction(String action) {
         if (EmbeddedCode.ME_ON.getValue().equals(action)) {
-            showToast("Desplazamiento en Progreso");
+            //this.setMotionEngineAction(true);
+            Toast.makeText(getApplicationContext(), "Desplazamiento en Progreso", Toast.LENGTH_SHORT).show();
         } else if (EmbeddedCode.ME_OFF.getValue().equals(action)) {
             dismissProgressDialog();
         } else {
-            showToast("Acción desconocida: " + action);
+            Toast.makeText(getApplicationContext(), "Acción desconocida: "+action, Toast.LENGTH_SHORT).show();
         }
     }
-
-    private void showToast(String message) {
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
-    }
-
     //#endregion
 
 }

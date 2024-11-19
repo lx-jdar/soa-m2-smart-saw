@@ -22,7 +22,6 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
     private BluetoothConnectionService connectionBtService;
     private boolean isConnected = false;
     private BTMessageBroadcastReceiver receiver;
-
     //#endregion
 
     //#region Activity Methods
@@ -32,10 +31,19 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
         super.onCreate(savedInstanceState);
         initializeView();
         buttonStartSystem.setButtonOnClickListener(buttonListener);
+
+
         if (BluetoothConnectionServiceImpl.checkPermissions(this))
         {
-            setConnectionService();
-            setBroadcastConfiguration();
+            connectionBtService = BluetoothConnectionServiceImpl.getInstance();
+            connectionBtService.setActivity(this);
+            connectionBtService.setContext(getApplicationContext());
+            connectionBtService.onCreateBluetooth();
+
+            // Registrar el receptor
+            receiver = new BTMessageBroadcastReceiver(this);
+            IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
+            LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
         } else {
             finish();
         }
@@ -45,36 +53,33 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
     protected void onResume() {
         super.onResume();
         connectionBtService.onResumeBluetooth();
+        connectionBtService.sendMessageToEmbedded("R");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        connectionBtService.onPauseBluetooth();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Desregistrar el receptor local para evitar fugas de memoria
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
     }
-
     //#endregion
 
     //#region Private Methods
-
-    private void setConnectionService() {
-        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
-        connectionBtService.setActivity(this);
-        connectionBtService.setContext(getApplicationContext());
-        connectionBtService.onCreateBluetooth();
-    }
-
-    private void setBroadcastConfiguration() {
-        receiver = new BTMessageBroadcastReceiver(this);
-        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
-    }
 
     private void initializeView() {
         setContentView(R.layout.activity_main);
@@ -100,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
 
     @Override
     public void onReceive(Intent intent) {
+        // Modificar la variable personalizada
         String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
         if (activity != null && activity.equals(ActivityType.MAIN_ACTIVITY.toString())) {
             String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);

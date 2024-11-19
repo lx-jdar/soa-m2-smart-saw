@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- - Aca se indican los permisos que va a necesitar la aplicacion -->
+    <!-- Request legacy Bluetooth permissions on older devices. -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" /> <!-- Needed only if your app communicates with already-paired Bluetooth devices. -->
     <!--<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" /> -->
+    <!--
+ Needed only if your app makes the device discoverable to Bluetooth
+     devices.
+    -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -24,27 +31,29 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.SmartSaw">
-
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <!-- <activity android:name=".OptionsActivity" /> -->
+        <activity android:name=".ConfigurationActivity" />
+        <activity android:name=".PrecisionActivity" />
+        <activity android:name=".MovementActivity" />
         <activity android:name=".OptionsActivity" />
 
-        <activity android:name=".ConfigurationActivity" />
 
-        <activity android:name=".PrecisionActivity" />
 
-        <activity android:name=".MovementActivity" />
 
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
     </application>
+
+
 
 </manifest>
