@@ -1,6 +1,7 @@
 package com.example.smartsaw;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog.Builder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -12,7 +13,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
-import androidx.appcompat.app.AlertDialog;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -28,6 +29,8 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     private Sensor accelerometer;
     private boolean isOn = false;
     private static final float THRESHOLD = 5.0f;
+
+    private boolean updateSawAction =false;
 
     private BluetoothConnectionService connectionBtService;
 
@@ -119,27 +122,31 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         buttonPositioning.setButtonText(getString(R.string.position_saw));
     }
 
-    private void setSawAction(boolean isChecked) {
-        boolean isEnabled = !isChecked;
+    private void setButtonStates(boolean isEnabled) {
         buttonConfiguration.setEnabled(isEnabled);
         buttonPositioning.setEnabled(isEnabled);
         buttonBack.setEnabled(isEnabled);
-        // DESCOMENTAR UNA VEZ APLICADA LA LOGICA DEL UMBRAL VERTICAL
-            /*if (isChecked) {
-                switchOnOff.postDelayed(this::showAlertPopupVerticalLimit, 1000);
-            }*/
-        if (isEnabled) {
-            connectionBtService.sendMessageToEmbedded(EmbeddedCode.S.toString());
-        } else {
-            connectionBtService.sendMessageToEmbedded(EmbeddedCode.T.toString());
-        }
+    }
+
+    private void setSawAction(boolean isChecked) {
+        boolean isEnabled = !isChecked;
+        setButtonStates(isEnabled);
+//        if (isEnabled) {
+//            connectionBtService.sendMessageToEmbedded(EmbeddedCode.S.toString());
+//        } else {
+//            connectionBtService.sendMessageToEmbedded(EmbeddedCode.T.toString());
+//        }
+
+        new Thread(() -> simulateProgress()).start();
     }
 
     private void setListeners() {
         switchOnOff.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            this.setSawAction(isChecked);
-
-
+            if (!updateSawAction) {
+                this.setSawAction(isChecked);
+            } else {
+                updateSawAction =false;
+            }
         });
 
         buttonConfiguration.setOnClickListener(v -> {
@@ -170,17 +177,18 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
 
     @SuppressWarnings("unused")
     private void showAlertPopupVerticalLimit() {
-        new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.popup_title_vertical_limit))
-                .setMessage(getString(R.string.popup_description_vertical_limit))
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    switchOnOff.setChecked(false);
-                    buttonConfiguration.setEnabled(true);
-                    buttonPositioning.setEnabled(true);
-                    buttonBack.setEnabled(true);
-                })
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .show();
+        Builder builderAccept = new Builder(this);
+        builderAccept.setTitle(getString(R.string.popup_title_vertical_limit));
+        builderAccept.setMessage(getString(R.string.popup_description_vertical_limit));
+        builderAccept.setIcon(android.R.drawable.ic_dialog_alert);
+        builderAccept.setPositiveButton(getString(android.R.string.ok), (dialogMoveCompleted, which) -> {
+            updateSawAction =true;
+            dialogMoveCompleted.dismiss();
+            switchOnOff.setChecked(false);
+            setButtonStates(true);
+        });
+        builderAccept.setCancelable(false);
+        builderAccept.show();
     }
 
     private void showToast(String message) {
@@ -189,7 +197,6 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
 
     @Override
     public void onReceive(Intent intent) {
-
         // Modificar la variable personalizada
         String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
         if (activity != null && activity.equals(ActivityType.OPTIONS_ACTIVITY.toString())) {
@@ -201,15 +208,39 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     }
 
     private void processEmbeddedAction(String action) {
-         if (EmbeddedCode.SON.getValue().equals(action)) {
-            this.setSawAction(true); // Ejemplo para otro caso
-        } else if (EmbeddedCode.SOFF.getValue().equals(action)) {
-            this.setSawAction(false);
+         if (EmbeddedCode.SON.toString().equals(action)) {
+             switchOnOff.setChecked(true);
+             setButtonStates(true);
+        } else if (EmbeddedCode.SOFF.toString().equals(action)) {
+             setButtonStates(false);
+             updateSawAction =true;
+             switchOnOff.setChecked(false);
+         } else if (EmbeddedCode.SUS.toString().equals(action)) {
+             showAlertPopupVerticalLimit();
          } else {
             Toast.makeText(getApplicationContext(), "Acción desconocida: "+action, Toast.LENGTH_SHORT).show();
         }
     }
 
     //#endregion
+
+    private void simulateProgress() {
+        for (int i = 0; i <= 100; i++) {
+            try {
+                // Simula el tiempo de ejecución (por ejemplo, un retraso de 50ms por cada incremento)
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            final int progress = i;  // Hacemos que el valor de 'i' sea final
+            // Actualiza el progreso en la UI
+            //runOnUiThread(() -> processEmbeddedAction("SUS"));  // Usamos 'progress' que es final
+        }
+
+        // Después de que el progreso llega al 100%, cierra el diálogo
+        runOnUiThread(() -> processEmbeddedAction("SOFF"));
+
+    }
 
 }
