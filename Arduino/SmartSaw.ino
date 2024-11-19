@@ -23,8 +23,8 @@
 // ------------------------------------------------
 // Umbrales Distancia
 // ------------------------------------------------
-#define DISTANCIA_MINIMA_V 5
-#define DISTANCIA_MAXIMA_H 200
+#define DISTANCIA_MAXIMA_V 35
+#define DISTANCIA_MAXIMA_H 40
 #define DISTANCIA_MINIMA_H 10
 
 // ------------------------------------------------
@@ -76,7 +76,8 @@ enum bluetoothEnum
 	ME_ON,
 	ME_OFF,
 	SON,
-	SOFF
+	SOFF,
+	SUS
 };
 
 // ------------------------------------------------
@@ -187,6 +188,7 @@ volatile bool pulsadorSierraActivado;
 long startTime;
 const int timeThreshold = DEBOUNCE_TIME_MS;
 int valorDesplazamiento;
+bool isBluetoothConnected = false;
 
 estadoEnum estadoEmbebido;
 Evento evento;
@@ -446,7 +448,7 @@ void maquinaEstado()
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_LIMITE_VERTICAL_SUPERADO");
                     detenerMotorSierra();
                     apagarLed(&ledSierra);
-                    enviarMensajeToApp(EnumToString(SOFF));
+                    enviarMensajeToApp(EnumToString(SUS));  // SIERRA_UMBRAL_SUPERADO
                     monitor.mensaje = "Pase el umbral minimo. Deteniendo el motor sierra ...\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -516,6 +518,7 @@ void inicializarMonitor(Monitor* monitor, long baudRate)
     monitor->estado = ESTADO_MONITOR_ACTUALIZAR_MENSAJE;
 	monitor->configuracion = baudRate;
   	Serial.begin(monitor->configuracion);
+  	BTSerial.end();
   	BTSerial.begin(monitor->configuracion);      // Inicializamos el puerto serie BT que hemos creado
 }
 
@@ -598,7 +601,10 @@ void setMensajeAImprimir(String mensaje)
 }
 
 void enviarMensajeToApp(const char* data) {
-	BTSerial.write(data);
+	if (isBluetoothConnected) {
+		BTSerial.write(data);
+	}
+
 }
 
 void verificarLecturaDesdeMonitorSerial()
@@ -704,6 +710,7 @@ const char* EnumToString(bluetoothEnum btCode) {
         case ME_OFF: return "ME_OFF";
         case SON: return "SON";
         case SOFF: return "SOFF";
+        case SUS: return "SUS";
         default: return "Desconocido";
     }
 }
@@ -739,9 +746,8 @@ void verificarBluetooth()
 		}
         else if (btInput.indexOf('R') == 0)
 		{
-			monitor.mensaje = "Se ingresó el caracter: R";
-			ultrasonidoHorizontal.estado = ESTADO_ULT_DETENIDO;
-			ultrasonidoHorizontal.sentido = SIN_MOVIMIENTO;
+        	isBluetoothConnected = true;
+        	enviarMensajeToApp("OK");
 		}
         else if (isValidNumber(btInput))
         {
@@ -758,9 +764,9 @@ void verificarLimitesHorizontales()
 {
     if(valorDesplazamiento)
     {
-        actualizarUltrasonido(&ultrasonidoHorizontal);
+        //actualizarUltrasonido(&ultrasonidoHorizontal);
         posicionActual = ultrasonidoHorizontal.posicionPartida;
-        int posibleDesplazamiento = posicionActual + (ultrasonidoHorizontal.sentido == SENTIDO_IZQUIERDA ? valorDesplazamiento : - valorDesplazamiento);
+        int posibleDesplazamiento = posicionActual + (ultrasonidoHorizontal.sentido == SENTIDO_IZQUIERDA ? - valorDesplazamiento : valorDesplazamiento);
         if ((posibleDesplazamiento <= DISTANCIA_MINIMA_H || posibleDesplazamiento >= DISTANCIA_MAXIMA_H) && ultrasonidoHorizontal.estado == ESTADO_ULT_EN_MOVIMIENTO)
         {
             ultrasonidoHorizontal.estado = ESTADO_ULT_UMBRAL_SUPERADO;
@@ -770,8 +776,8 @@ void verificarLimitesHorizontales()
 
 void verificarPosicionUltrasonidoHorizontal()
 {
-    verificarLimitesHorizontales();
-    actualizarUltrasonido(&ultrasonidoHorizontal);
+	actualizarUltrasonido(&ultrasonidoHorizontal);
+	verificarLimitesHorizontales();
     switch (ultrasonidoHorizontal.estado)
     {
         case ESTADO_ULT_UMBRAL_SUPERADO:
@@ -826,7 +832,7 @@ void verificarPosicionUltrasonidoVertical()
 		{
 			posicionActual = ultrasonidoVertical.cm;
 			log("Posicion actual ULT V: " + String(posicionActual) + " CM.");
-			if (posicionActual <= DISTANCIA_MINIMA_V) ultrasonidoVertical.estado = ESTADO_ULT_UMBRAL_SUPERADO;
+			if (posicionActual >= DISTANCIA_MAXIMA_V) ultrasonidoVertical.estado = ESTADO_ULT_UMBRAL_SUPERADO;
 			break;
 		}
 
