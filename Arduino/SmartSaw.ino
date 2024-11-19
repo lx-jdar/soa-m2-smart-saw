@@ -23,9 +23,9 @@
 // ------------------------------------------------
 // Umbrales Distancia
 // ------------------------------------------------
-#define DISTANCIA_MAXIMA_V 35
-#define DISTANCIA_MAXIMA_H 40
-#define DISTANCIA_MINIMA_H 10
+#define DISTANCIA_MAXIMA_V 28
+#define DISTANCIA_MAXIMA_H 22
+#define DISTANCIA_MINIMA_H 8
 
 // ------------------------------------------------
 // Pines Sensores (A = Analógico | D = Digital)
@@ -602,7 +602,7 @@ void setMensajeAImprimir(String mensaje)
 
 void enviarMensajeToApp(const char* data) {
 	if (isBluetoothConnected) {
-		BTSerial.write(data);
+		BTSerial.write(data+"\n");
 	}
 
 }
@@ -748,6 +748,7 @@ void verificarBluetooth()
 		{
         	isBluetoothConnected = true;
         	enviarMensajeToApp("OK");
+        	monitor.mensaje = "Bluetooth Conectado!";
 		}
         else if (isValidNumber(btInput))
         {
