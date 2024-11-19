@@ -32,27 +32,31 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
         super.onCreate(savedInstanceState);
         initializeView();
         setListeners();
-
-        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
-        connectionBtService.setActivity(this);
-        connectionBtService.setContext(getApplicationContext());
-
-        // Registrar el receptor
-        receiver = new BTMessageBroadcastReceiver(this);
-        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
+        setConnectionService();
+        setBroadcastConfiguration();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Desregistrar el receptor local para evitar fugas de memoria
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
     }
 
     //#endregion
 
     //#region Private Methods
+
+    private void setConnectionService() {
+        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
+        connectionBtService.setActivity(this);
+        connectionBtService.setContext(getApplicationContext());
+    }
+
+    private void setBroadcastConfiguration() {
+        receiver = new BTMessageBroadcastReceiver(this);
+        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
+    }
 
     private void initializeView() {
         setContentView(R.layout.activity_configuration);
@@ -75,7 +79,7 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
 
         buttonSaveChanges.setButtonOnClickListener(v -> {
             if (validateFields()) {
-                Toast.makeText(ConfigurationActivity.this, getString(R.string.changes_saved), Toast.LENGTH_SHORT).show();
+                showToast(getString(R.string.changes_saved));
             }
         });
     }
@@ -100,12 +104,15 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
 
     @Override
     public void onReceive(Intent intent) {
-        // Modificar la variable personalizada
         String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
         if (activity != null && activity.equals(ActivityType.CONFIGURATION_ACTIVITY.toString())) {
             String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
-            Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
+            showToast("Se recibió " + valor);
         }
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     //#endregion

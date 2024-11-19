@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -26,40 +27,34 @@ import java.util.UUID;
 
 public class BluetoothConnectionServiceImpl implements BluetoothConnectionService {
 
-    private static BluetoothConnectionServiceImpl instance = null;
+    //#region Attributes
 
     private AppCompatActivity activity;
-    private Handler bluetoothIn;
+    private Context mContext;
     final int handlerState = 0;
 
-    //used to identify handler message
+    private static BluetoothConnectionServiceImpl instance = null;
+    private Handler bluetoothIn;
     private BluetoothAdapter btAdapter = null;
     private BluetoothSocket btSocket = null;
+
     private final StringBuilder recDataString = new StringBuilder();
     private ConnectedThread mConnectedThread;
 
-    private Context mContext;
-
-    // String for MAC address del Hc05
-    private static String address = null;
-    public static final int MULTIPLE_PERMISSIONS = 5; // code you want.
-
-    // SPP UUID service  - Funciona en la mayoria de los dispositivos
+    public static final int MULTIPLE_PERMISSIONS = 5;
     private static final UUID BT_DEVICE_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-
-    private static String[] permissions= new String[] {
+    private static final String[] permissions = new String[]{
             android.Manifest.permission.BLUETOOTH,
             android.Manifest.permission.BLUETOOTH_ADMIN,
-            //android.Manifest.permission.BLUETOOTH_CONNECT,
-            //android.Manifest.permission.BLUETOOTH_SCAN,
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             android.Manifest.permission.ACCESS_FINE_LOCATION,
-            //android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            //android.Manifest.permission.READ_PHONE_STATE,
-            //android.Manifest.permission.READ_EXTERNAL_STORAGE,
     };
 
-    private BluetoothConnectionServiceImpl() { }
+    private static final String TAG = "BLUETOOTH_CONNECTION_SERVICE_IMPLEMENTATION";
+
+    //#endregion
+
+    //#region Public Methods
 
     public void setActivity(AppCompatActivity activity) {
         this.activity = activity;
@@ -69,8 +64,6 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         this.mContext = context;
     }
 
-    //#endregion
-
     public static BluetoothConnectionServiceImpl getInstance() {
         if (instance == null) {
             instance = new BluetoothConnectionServiceImpl();
@@ -79,31 +72,13 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
     }
 
     public void onCreateBluetooth() {
-        // Parte Bluetooth
-        //obtengo el adaptador del bluethoot
         btAdapter = BluetoothAdapter.getDefaultAdapter();
-        //defino el Handler de comunicacion entre el hilo Principal  el secundario.
-        //El hilo secundario va a mostrar informacion al layout atraves utilizando indeirectamente a este handler
-        bluetoothIn = HandlerMsgHiloPrincipal();
-        //defino los handlers para los botones Apagar y encender
-        //btnEncender.setOnClickListener(btnEncenderListener);
-        //btnApagar.setOnClickListener(btnApagarListener);
-        //        if (checkPermissions())        {
-        //enableComponent();        }
-        System.out.println("ok");
+        bluetoothIn = handlerMsgHiloPrincipal();
     }
 
-    //Metodo que crea el socket bluethoot
-    @SuppressLint("MissingPermission")
-    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
-        return  device.createRfcommSocketToServiceRecord(BT_DEVICE_UUID);
-    }
-
-    //Metodo que chequea si estan habilitados los permisos
     public static boolean checkPermissions(AppCompatActivity activity) {
         int result;
         List<String> listPermissionsNeeded = new ArrayList<>();
-        //Se chequea si la version de Android es menor a la 6
         for (String p : permissions) {
             result = ContextCompat.checkSelfPermission(activity, p);
             if (result != PackageManager.PERMISSION_GRANTED) {
@@ -111,44 +86,86 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
             }
         }
         if (!listPermissionsNeeded.isEmpty()) {
-            ActivityCompat.requestPermissions(
-                    activity,
-                    listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]),
-                    MULTIPLE_PERMISSIONS );
+            ActivityCompat.requestPermissions(activity, listPermissionsNeeded.toArray(new String[0]), MULTIPLE_PERMISSIONS);
             return false;
         }
         return true;
     }
 
+    @SuppressLint("MissingPermission")
+    public void onResumeBluetooth() {
+        String address = "00:22:02:01:0F:38";
+        BluetoothDevice device = btAdapter.getRemoteDevice(address);
+        try {
+            btSocket = createBluetoothSocket(device);
+        } catch (IOException e) {
+            showToast("La creacción del Socket fallo");
+            broadcastMessage(TAG, "La creacción del Socket fallo");
+            return;
+        }
+        try {
+            btSocket.connect();
+        } catch (IOException e) {
+            Log.e(TAG, "Error al conectar el Bluetooth Socket");
+            try {
+                btSocket.close();
+            } catch (IOException ignored) {
+                Log.e(TAG, "Ocurrio un error al cerrar el Bluetooth Socket");
+                return;
+            }
+            broadcastMessage(TAG, "La creacción del Socket fallo");
+        }
+        mConnectedThread = new ConnectedThread(btSocket);
+        mConnectedThread.start();
+        broadcastMessage(TAG, "Connected");
+    }
+
+    public void onPauseBluetooth() {
+        try {
+            btSocket.close();
+        } catch (IOException ignored) {
+            Log.e(TAG, "Ocurrio un error al cerrar el Bluetooth Socket");
+        }
+    }
+
+    public void sendMessageToEmbedded(String msg) {
+        mConnectedThread.write(msg);
+    }
+
+    //#endregion
+
+    //#region Private Methods
+
+    private BluetoothConnectionServiceImpl() {
+    }
+
+    @SuppressLint("MissingPermission")
+    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
+        return device.createRfcommSocketToServiceRecord(BT_DEVICE_UUID);
+    }
+
     private void decodeDataForActivity(String code) {
-        if (EmbeddedCode.SON.getValue().equals(code)) {
+        if (EmbeddedCode.SON.toString().equals(code)) {
             broadcastMessage(ActivityType.OPTIONS_ACTIVITY.toString(), code);
-        } else if (EmbeddedCode.SOFF.getValue().equals(code)) {
+        } else if (EmbeddedCode.SOFF.toString().equals(code)) {
             broadcastMessage(ActivityType.OPTIONS_ACTIVITY.toString(), code);
-        } else if (EmbeddedCode.ME_ON.getValue().equals(code)) {
+        } else if (EmbeddedCode.ME_ON.toString().equals(code)) {
             broadcastMessage(ActivityType.MOVEMENT_ACTIVITY.toString(), code);
-        } else if (EmbeddedCode.ME_OFF.getValue().equals(code)) {
+        } else if (EmbeddedCode.ME_OFF.toString().equals(code)) {
             broadcastMessage(ActivityType.MOVEMENT_ACTIVITY.toString(), code);
         }
     }
 
-    private Handler HandlerMsgHiloPrincipal() {
-        return  new Handler(Looper.getMainLooper()) {
-            public void handleMessage(@NonNull android.os.Message msg)
-            {
-                //si se recibio un msj del hilo secundario
-                recDataString.delete(0,recDataString.length());
-                if (msg.what == handlerState)
-                {
-                    //voy concatenando el msj
+    private Handler handlerMsgHiloPrincipal() {
+        return new Handler(Looper.getMainLooper()) {
+            public void handleMessage(@NonNull android.os.Message msg) {
+                recDataString.delete(0, recDataString.length());
+                if (msg.what == handlerState) {
                     String readMessage = (String) msg.obj;
                     recDataString.append(readMessage);
                     int endOfLineIndex = recDataString.indexOf("\r\n");
-                    //cuando recibo toda una linea la muestro en el layout
-                    if (endOfLineIndex > 0)
-                    {
-                        String dataInPrint = recDataString.substring(0, endOfLineIndex);
-                        //txtPotenciometro.setText(dataInPrint);
+                    if (endOfLineIndex > 0) {
+                        recDataString.substring(0, endOfLineIndex);
                         recDataString.delete(0, recDataString.length());
                     }
                     decodeDataForActivity(recDataString.toString());
@@ -161,130 +178,37 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         Toast.makeText(this.activity.getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
-    @SuppressLint("MissingPermission")
-    public void onResumeBluetooth() {
-        // super.onResume();
-        //Obtengo el parametro, aplicando un Bundle, que me indica la Mac Adress del HC05
-//        Intent intent=this.activity.getIntent();
-//        Bundle extras=intent.getExtras();
-        address= "00:22:02:01:0F:38";
-        //extras.getString("Direccion_Bluethoot");
-        BluetoothDevice device = btAdapter.getRemoteDevice(address);
-        //se realiza la conexion del Bluethoot crea y se conectandose a atraves de un socket
-        try
-        {
-            btSocket = createBluetoothSocket(device);
-        }
-        catch (IOException e)
-        {
-            showToast("La creacción del Socket fallo");
-            broadcastMessage("MAIN_ACTIVITY","La creacción del Socket fallo");
-        }
-
-        // Establish the Bluetooth socket connection.
-        try
-        {
-            btSocket.connect();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-            try
-            {
-                btSocket.close();
-            }
-            catch (IOException e2)
-            {
-                //insert code to deal with this
-            }
-            broadcastMessage("MAIN_ACTIVITY","La creacción del Socket fallo");
-        }
-
-        //Una establecida la conexion con el Hc05 se crea el hilo secundario, el cual va a recibir
-        // los datos de Arduino atraves del bluethoot
-        mConnectedThread = new ConnectedThread(btSocket);
-        mConnectedThread.start();
-        //I send a character when resuming.beginning transmission to check device is connected
-        //If it is not an exception will be thrown in the write method and finish() will be called
-        //mConnectedThread.write("S");
-        broadcastMessage("MAIN_ACTIVITY", "Connected");
-    }
-
-    public void onPauseBluetooth() {
-        //    super.onPause();
-        try
-        {
-            //Don't leave Bluetooth sockets open when leaving activity
-            btSocket.close();
-        } catch (IOException e2) {
-            //insert code to deal with this
-        }
-    }
-
     private void broadcastMessage(String activity, String msg) {
-        //Se envian los valores sensados por el potenciometro, al bradcast reciever de la activity principal
         Intent intent = new Intent(ACTION_DATA_RECEIVE);
         intent.putExtra("TOPIC", activity);
         intent.putExtra("DATA", msg);
-
-        //mContext.sendBroadcast(intent);
-        // Enviar el broadcast local
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
-
     }
 
-    public void sendMessageToEmbedded(String msg) {
-        mConnectedThread.write(msg);
-    }
-
-    public  void onStopBluetooth() {
-        // super.onStop();
-    }
-
-    public void onRestartBluetooth() {
-        // super.onRestart();
-    }
-
-    public void onDestroyBluetooth() {
-        //   super.onDestroy();
-    }
-    //#endregion
-
-    //#region Private Methods
-    private class ConnectedThread extends Thread    {
+    private class ConnectedThread extends Thread {
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
 
-        //Constructor de la clase del hilo secundario
-        public ConnectedThread(BluetoothSocket socket)
-        {
+        public ConnectedThread(BluetoothSocket socket) {
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
-            try
-            {
-                //Create I/O streams for connection
+            try {
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
-            } catch (IOException e) { }
+            } catch (IOException e) {
+                Log.e(TAG, "Error al obtener los flujos del BluetoothSocket");
+            }
             mmInStream = tmpIn;
             mmOutStream = tmpOut;
         }
 
-        //metodo run del hilo, que va a entrar en una espera activa para recibir los msjs del HC05
-        public void run()
-        {
+        public void run() {
             byte[] buffer = new byte[256];
             int bytes;
-            //el hilo secundario se queda esperando mensajes del HC05
-            while (true)
-            {
-                try
-                {
-                    //se leen los datos del Bluethoot
+            while (true) {
+                try {
                     bytes = mmInStream.read(buffer);
                     String readMessage = new String(buffer, 0, bytes);
-                    //se muestran en el layout de la activity, utilizando el handler del hilo
-                    // principal antes mencionado
                     bluetoothIn.obtainMessage(handlerState, bytes, -1, readMessage).sendToTarget();
                 } catch (IOException e) {
                     break;
@@ -294,15 +218,13 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
 
         public void write(String input) {
             byte[] msgBuffer = input.getBytes();
-            //converts entered String into bytes
             try {
                 mmOutStream.write(msgBuffer);
-                //write bytes over BT connection via outstream
             } catch (IOException e) {
-                //if you cannot write, close the application
                 showToast("La conexion fallo");
-                //finish();
             }
         }
     }
+
+    //#endregion
 }

@@ -9,11 +9,13 @@ public enum EmbeddedCode {
     D("SEND_RIGHT_MOVEMENT"),
     ME_ON("MOTION_ENGINE_ON"),
     ME_OFF("MOTION_ENGINE_OFF"),
-    PNOK("PRECISION_NUMBER_OK");
+    PNOK("PRECISION_NUMBER_OK"),
+    SUS("THRESHOLD_LIMIT_SUPERED");
 
     private final String value;
+
     EmbeddedCode(String value) {
-        this.value=value;
+        this.value = value;
     }
 
     public String getValue() {
