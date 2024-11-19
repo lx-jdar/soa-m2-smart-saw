@@ -15,7 +15,7 @@
 #define DETENER_SIERRA 21
 #define MARGEN_DE_ERROR 1L
 #define MODO_PIN_SIERRA FALLING 	// CHANGE, RISING, FALLING
-#define MOTOR_SPEED 128
+#define MOTOR_SPEED 255
 #define VALOR_CONTINUE -1
 #define VELOCIDAD_DEL_SONIDO 57
 #define MENSAJE_INICIO "Ingrese la cantidad de desplazamiento (en CM) que debera realizar el motor.\nO puede presionar el boton de la sierra para comenzar a cortar."
@@ -65,6 +65,18 @@ enum estadoEnum
     ESTADO_EMBEBIDO_IDLE,
     ESTADO_EMBEBIDO_EN_MOVIMIENTO,
     ESTADO_EMBEBIDO_SIERRA_ACTIVA
+};
+
+// ------------------------------------------------
+// Estados del Coneccion Bluetooth
+// ------------------------------------------------
+enum bluetoothEnum
+{
+    PNOK,
+	ME_ON,
+	ME_OFF,
+	SON,
+	SOFF
 };
 
 // ------------------------------------------------
@@ -255,6 +267,8 @@ void verificarPosicionUltrasonidoVertical();
 void actualizarUltrasonido(Ultrasonido* ultrasonido);
 bool esPulsadorPresionado(unsigned int pinPulsador);
 void setMensajeAImprimir(String mensaje);
+void enviarMensajeToApp(const char* data);
+const char* EnumToString(bluetoothEnum btCode);
 
 // ------------------------------------------------
 // Captura de eventos
@@ -292,6 +306,7 @@ void maquinaEstado()
                     if (valorIngresado > 0)
                     {
                         valorDesplazamiento = valorIngresado;
+                        enviarMensajeToApp(EnumToString(PNOK));
                         monitor.mensaje = "El motor se desplazara " + String(valorDesplazamiento) + " CM cuando se presione un pulsador.";
                     }
                     else
@@ -318,7 +333,8 @@ void maquinaEstado()
 					encenderMotorDesplazamiento(PIN_D_PULSADOR_IZQUIERDA);
 					encenderLed(&ledDesplazamiento);
 					setMensajeAImprimir("Pulsador izquierdo presionado. Desplazando motor a izquierda.");
-                    estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
+					enviarMensajeToApp(EnumToString(ME_ON));
+					estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
                 }
 
@@ -328,6 +344,7 @@ void maquinaEstado()
                     encenderMotorDesplazamiento(PIN_D_PULSADOR_DERECHA);
 					encenderLed(&ledDesplazamiento);
 					setMensajeAImprimir("Pulsador derecho presionado. Desplazando motor a derecha.");
+					enviarMensajeToApp(EnumToString(ME_ON));
                     estadoEmbebido = ESTADO_EMBEBIDO_EN_MOVIMIENTO;
                     break;
                 }
@@ -338,6 +355,7 @@ void maquinaEstado()
                     encenderMotorSierra();
                     encenderLed(&ledSierra);
                     setMensajeAImprimir("Pulsador SIERRA encendida. Cortando ...");
+                    enviarMensajeToApp(EnumToString(SON));
                     estadoEmbebido = ESTADO_EMBEBIDO_SIERRA_ACTIVA;
                     break;
                 }
@@ -368,6 +386,7 @@ void maquinaEstado()
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_POSICION_FINALIZADA");
                     detenerMotorDesplazamiento();
                     apagarLed(&ledDesplazamiento);
+                    enviarMensajeToApp(EnumToString(ME_OFF));
                     monitor.mensaje = "Posicionamiento finalizado.\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -380,6 +399,7 @@ void maquinaEstado()
                     log("ESTADO_EMBEBIDO_EN_MOVIMIENTO", "EVENTO_LIMITE_HORIZONTAL_SUPERADO");
                     detenerMotorDesplazamiento();
                     apagarLed(&ledDesplazamiento);
+                    enviarMensajeToApp(EnumToString(ME_OFF));
                     monitor.mensaje = "Se quiere desplazar mas que el umbral maximo. Motor de desplazamiento apagandose ...\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -413,6 +433,7 @@ void maquinaEstado()
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_SIERRA_DETENIDA");
                     detenerMotorSierra();
                     apagarLed(&ledSierra);
+                    enviarMensajeToApp(EnumToString(SOFF));
                     monitor.mensaje = "Deteniendo el motor sierra ...\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -425,6 +446,7 @@ void maquinaEstado()
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_LIMITE_VERTICAL_SUPERADO");
                     detenerMotorSierra();
                     apagarLed(&ledSierra);
+                    enviarMensajeToApp(EnumToString(SOFF));
                     monitor.mensaje = "Pase el umbral minimo. Deteniendo el motor sierra ...\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -575,6 +597,10 @@ void setMensajeAImprimir(String mensaje)
     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
 }
 
+void enviarMensajeToApp(const char* data) {
+	BTSerial.write(data);
+}
+
 void verificarLecturaDesdeMonitorSerial()
 {
     switch (monitor.estado)
@@ -671,6 +697,17 @@ boolean isValidNumber(String str)
 	return false;
 }
 
+const char* EnumToString(bluetoothEnum btCode) {
+    switch (btCode) {
+        case PNOK: return "PNOK";
+        case ME_ON: return "ME_ON";
+        case ME_OFF: return "ME_OFF";
+        case SON: return "SON";
+        case SOFF: return "SOFF";
+        default: return "Desconocido";
+    }
+}
+
 
 void verificarBluetooth()
 {
@@ -693,6 +730,11 @@ void verificarBluetooth()
         else if (btInput.indexOf(BLUETOOTH_SIERRA) == 0)
 		{
 			monitor.mensaje = "Se ingresó el caracter: S";
+			ISR_Boton();
+		}
+        else if (btInput.indexOf("T") == 0)
+		{
+			monitor.mensaje = "Se ingresó el caracter: T";
 			ISR_Boton();
 		}
         else if (btInput.indexOf('R') == 0)

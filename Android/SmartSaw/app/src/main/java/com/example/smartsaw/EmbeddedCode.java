@@ -8,7 +8,8 @@ public enum EmbeddedCode {
     I("SEND_LEFT_MOVEMENT"),
     D("SEND_RIGHT_MOVEMENT"),
     ME_ON("MOTION_ENGINE_ON"),
-    ME_OFF("MOTION_ENGINE_OFF");
+    ME_OFF("MOTION_ENGINE_OFF"),
+    PNOK("PRECISION_NUMBER_OK");
 
     private final String value;
     EmbeddedCode(String value) {

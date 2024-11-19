@@ -101,9 +101,9 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
     @Override
     public void onReceive(Intent intent) {
         // Modificar la variable personalizada
-        String activity = intent.getStringExtra("TOPIC");
-        if (activity != null && activity.equals("CONFIG_ACTIVITY")) {
-            String valor = intent.getStringExtra("DATA");
+        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
+        if (activity != null && activity.equals(ActivityType.CONFIGURATION_ACTIVITY.toString())) {
+            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
             Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
         }
     }

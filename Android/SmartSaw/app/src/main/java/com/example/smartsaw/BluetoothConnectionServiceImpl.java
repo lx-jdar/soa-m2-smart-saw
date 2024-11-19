@@ -120,6 +120,18 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         return true;
     }
 
+    private void decodeDataForActivity(String code) {
+        if (EmbeddedCode.SON.getValue().equals(code)) {
+            broadcastMessage(ActivityType.OPTIONS_ACTIVITY.toString(), code);
+        } else if (EmbeddedCode.SOFF.getValue().equals(code)) {
+            broadcastMessage(ActivityType.OPTIONS_ACTIVITY.toString(), code);
+        } else if (EmbeddedCode.ME_ON.getValue().equals(code)) {
+            broadcastMessage(ActivityType.MOVEMENT_ACTIVITY.toString(), code);
+        } else if (EmbeddedCode.ME_OFF.getValue().equals(code)) {
+            broadcastMessage(ActivityType.MOVEMENT_ACTIVITY.toString(), code);
+        }
+    }
+
     private Handler HandlerMsgHiloPrincipal() {
         return  new Handler(Looper.getMainLooper()) {
             public void handleMessage(@NonNull android.os.Message msg)
@@ -139,9 +151,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
                         //txtPotenciometro.setText(dataInPrint);
                         recDataString.delete(0, recDataString.length());
                     }
-                    if (recDataString.toString().equals("OK")) {
-                        broadcastMessage("OPTIONS_ACTIVITY", recDataString.toString());
-                    }
+                    decodeDataForActivity(recDataString.toString());
                 }
             }
         };

@@ -89,13 +89,13 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
                 if (!isOn) {
                     isOn = true;
                     switchOnOff.setChecked(true);
-                    connectionBtService.sendMessageToEmbedded("S");
+                    connectionBtService.sendMessageToEmbedded(EmbeddedCode.S.toString());
                 }
             } else if (x < -THRESHOLD) {
                 if (isOn) {
                     isOn = false;
                     switchOnOff.setChecked(false);
-                    connectionBtService.sendMessageToEmbedded("S");
+                    connectionBtService.sendMessageToEmbedded(EmbeddedCode.T.toString());
                 }
             }
         }
@@ -191,9 +191,9 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     public void onReceive(Intent intent) {
 
         // Modificar la variable personalizada
-        String activity = intent.getStringExtra("TOPIC");
-        if (activity != null && activity.equals("OPTIONS_ACTIVITY")) {
-            String valor = intent.getStringExtra("DATA");
+        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
+        if (activity != null && activity.equals(ActivityType.OPTIONS_ACTIVITY.toString())) {
+            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
             Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
             this.processEmbeddedAction(valor);
 
@@ -201,11 +201,11 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     }
 
     private void processEmbeddedAction(String action) {
-        if (EmbeddedCode.SOFF.getValue().equals(action)) {
-            this.setSawAction(false);
-        } else if (EmbeddedCode.SON.getValue().equals(action)) {
+         if (EmbeddedCode.SON.getValue().equals(action)) {
             this.setSawAction(true); // Ejemplo para otro caso
-        } else {
+        } else if (EmbeddedCode.SOFF.getValue().equals(action)) {
+            this.setSawAction(false);
+         } else {
             Toast.makeText(getApplicationContext(), "Acción desconocida: "+action, Toast.LENGTH_SHORT).show();
         }
     }

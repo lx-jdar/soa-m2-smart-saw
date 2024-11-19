@@ -22,10 +22,11 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
     private ButtonWood buttonRightMovement;
     private ImageButton buttonBack;
     private ImageButton buttonHome;
-    private BluetoothConnectionService connectionBtService;
-    private BTMessageBroadcastReceiver receiver;
     private AlertDialog progressDialog;
     private ProgressBar progressBar;
+
+    private BluetoothConnectionService connectionBtService;
+    private BTMessageBroadcastReceiver receiver;
 
     //#endregion
 
@@ -83,7 +84,7 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
 
         buttonRightMovement.setButtonOnClickListener(v -> {
             disableButtons();
-            connectionBtService.sendMessageToEmbedded(EmbeddedCode.I.toString());
+            connectionBtService.sendMessageToEmbedded(EmbeddedCode.D.toString());
             showProgressDialog();
         });
 
@@ -165,11 +166,11 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
     public void onReceive(Intent intent) {
 
         // Modificar la variable personalizada
-        String activity = intent.getStringExtra("TOPIC");
-        if (activity != null && activity.equals("MOVEMENT_ACTIVITY")) {
-            String valor = intent.getStringExtra("DATA");
+        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
+        if (activity != null && activity.equals(ActivityType.MOVEMENT_ACTIVITY.toString())) {
+            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
             processEmbeddedAction(valor);
-            Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Se recibió "+valor, Toast.LENGTH_SHORT).show();
         }
     }
 

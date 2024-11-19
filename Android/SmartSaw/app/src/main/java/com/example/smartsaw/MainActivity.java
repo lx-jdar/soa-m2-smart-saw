@@ -105,9 +105,9 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
     @Override
     public void onReceive(Intent intent) {
         // Modificar la variable personalizada
-        String activity = intent.getStringExtra("TOPIC");
-        if (activity != null && activity.equals("MAIN_ACTIVITY")) {
-            String valor = intent.getStringExtra("DATA");
+        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
+        if (activity != null && activity.equals(ActivityType.MAIN_ACTIVITY.toString())) {
+            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
             isConnected = (valor != null && valor.equals("Connected"));
         }
     }
