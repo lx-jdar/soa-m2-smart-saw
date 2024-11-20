@@ -200,6 +200,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
+                Log.e(TAG, "Error al realizar lectura del socket: " + e);
             }
             mmInStream = tmpIn;
             mmOutStream = tmpOut;

@@ -23,7 +23,6 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
     private ImageButton buttonBack;
     private ImageButton buttonHome;
     private AlertDialog progressDialog;
-    private ProgressBar progressBar;
     private BluetoothConnectionService connectionBtService;
     private BTMessageBroadcastReceiver receiver;
 
@@ -118,7 +117,7 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             LayoutInflater inflater = getLayoutInflater();
             View dialogView = inflater.inflate(R.layout.dialog_movement, null);
-            progressBar = dialogView.findViewById(R.id.progress_bar);
+            ProgressBar progressBar = dialogView.findViewById(R.id.progress_bar);
             progressBar.setMax(100);
             progressBar.setProgress(0);
             builder.setView(dialogView);

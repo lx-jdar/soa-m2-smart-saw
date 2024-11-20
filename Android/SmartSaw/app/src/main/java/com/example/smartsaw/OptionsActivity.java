@@ -112,7 +112,7 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
         if (activity != null && activity.equals(ActivityType.OPTIONS_ACTIVITY.toString())) {
             String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
-            showToast("Se recibió " + valor);
+            showToast("Se recibió: " + valor);
             this.processEmbeddedAction(valor);
         }
     }
