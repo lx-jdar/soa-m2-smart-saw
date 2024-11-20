@@ -11,7 +11,8 @@ import android.widget.TextView;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-public class NumberField extends ConstraintLayout {
+public class NumberField extends ConstraintLayout
+{
 
   //#region Attributes
 
@@ -22,17 +23,20 @@ public class NumberField extends ConstraintLayout {
 
   //#region Constructors
 
-  public NumberField(Context context) {
+  public NumberField(Context context)
+  {
     super(context);
     init(context, null);
   }
 
-  public NumberField(Context context, AttributeSet attrs) {
+  public NumberField(Context context, AttributeSet attrs)
+  {
     super(context, attrs);
     init(context, attrs);
   }
 
-  public NumberField(Context context, AttributeSet attrs, int defStyleAttr) {
+  public NumberField(Context context, AttributeSet attrs, int defStyleAttr)
+  {
     super(context, attrs, defStyleAttr);
     init(context, attrs);
   }
@@ -41,28 +45,35 @@ public class NumberField extends ConstraintLayout {
 
   //#region Public Methods
 
-  public void setLabelText(String text) {
+  public void setLabelText(String text)
+  {
     labelField.setText(text);
   }
 
   @SuppressWarnings("unused")
-  public void setNumberFieldText(String text) {
+  public void setNumberFieldText(String text)
+  {
     numberField.setText(text);
   }
 
-  public Integer getValue() {
+  public Integer getValue()
+  {
     String text = getNumberFieldText();
-    if (TextUtils.isEmpty(text)) {
+    if (TextUtils.isEmpty(text))
+    {
       return null;
     }
-    try {
+    try
+    {
       return Integer.parseInt(text);
-    } catch (NumberFormatException e) {
+    } catch (NumberFormatException e)
+    {
       return null;
     }
   }
 
-  public void setError(String errorMessage) {
+  public void setError(String errorMessage)
+  {
     numberField.setError(errorMessage);
   }
 
@@ -70,24 +81,29 @@ public class NumberField extends ConstraintLayout {
 
   //#region Private Methods
 
-  private void init(Context context, AttributeSet attrs) {
+  private void init(Context context, AttributeSet attrs)
+  {
     LayoutInflater.from(context).inflate(R.layout.number_field, this, true);
 
     labelField = findViewById(R.id.title_number_field);
     numberField = findViewById(R.id.value_number_field);
 
-    if (attrs != null) {
-      try (TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.NumberField)) {
+    if (attrs != null)
+    {
+      try (TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.NumberField))
+      {
         String labelText = typedArray.getString(R.styleable.NumberField_labelText);
         setLabelText(labelText);
         typedArray.recycle();
-      } catch (Exception e) {
+      } catch (Exception e)
+      {
         Log.e("NumberField", "Error initializing NumberField", e);
       }
     }
   }
 
-  private String getNumberFieldText() {
+  private String getNumberFieldText()
+  {
     return numberField.getText().toString();
   }
 

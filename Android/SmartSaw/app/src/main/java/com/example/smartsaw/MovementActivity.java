@@ -14,7 +14,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-public class MovementActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener {
+public class MovementActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener
+{
 
   //#region Attributes
 
@@ -31,7 +32,8 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
   //#region Activity Methods
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState)
+  {
     super.onCreate(savedInstanceState);
     initializeView();
     setListeners();
@@ -44,7 +46,8 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
   }
 
   @Override
-  protected void onDestroy() {
+  protected void onDestroy()
+  {
     super.onDestroy();
     LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
   }
@@ -54,9 +57,11 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
   //#region Broadcast Methods
 
   @Override
-  public void onReceive(Intent intent) {
+  public void onReceive(Intent intent)
+  {
     String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
-    if (activity != null && activity.equals(ActivityType.MOVEMENT_ACTIVITY.toString())) {
+    if (activity != null && activity.equals(ActivityType.MOVEMENT_ACTIVITY.toString()))
+    {
       String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
       processEmbeddedAction(valor);
       showToast("Se recibió " + valor);
@@ -67,7 +72,8 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
 
   //#region Private Methods
 
-  private void initializeView() {
+  private void initializeView()
+  {
     setContentView(R.layout.activity_movement);
     buttonLeftMovement = findViewById(R.id.btn_left_movement);
     buttonLeftMovement.setButtonText(getString(R.string.left));
@@ -79,41 +85,49 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
     buttonHome = findViewById(R.id.btn_home);
   }
 
-  private void disableButtons() {
+  private void disableButtons()
+  {
     buttonLeftMovement.setEnabled(false);
     buttonRightMovement.setEnabled(false);
     buttonBack.setEnabled(false);
     buttonHome.setEnabled(false);
   }
 
-  private void setListeners() {
-    buttonLeftMovement.setButtonOnClickListener(v -> {
+  private void setListeners()
+  {
+    buttonLeftMovement.setButtonOnClickListener(v ->
+    {
       disableButtons();
       connectionBtService.sendMessageToEmbedded(EmbeddedCode.I.toString());
       showProgressDialog();
     });
 
-    buttonRightMovement.setButtonOnClickListener(v -> {
+    buttonRightMovement.setButtonOnClickListener(v ->
+    {
       disableButtons();
       connectionBtService.sendMessageToEmbedded(EmbeddedCode.D.toString());
       showProgressDialog();
     });
 
-    buttonBack.setOnClickListener(v -> {
+    buttonBack.setOnClickListener(v ->
+    {
       Intent intent = new Intent(MovementActivity.this, PrecisionActivity.class);
       startActivity(intent);
       finish();
     });
 
-    buttonHome.setOnClickListener(v -> {
+    buttonHome.setOnClickListener(v ->
+    {
       Intent intent = new Intent(MovementActivity.this, OptionsActivity.class);
       startActivity(intent);
       finish();
     });
   }
 
-  private void showProgressDialog() {
-    if (progressDialog == null) {
+  private void showProgressDialog()
+  {
+    if (progressDialog == null)
+    {
       AlertDialog.Builder builder = new AlertDialog.Builder(this);
       LayoutInflater inflater = getLayoutInflater();
       View dialogView = inflater.inflate(R.layout.dialog_movement, null);
@@ -127,19 +141,23 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
     progressDialog.show();
   }
 
-  private void dismissProgressDialog() {
-    if (progressDialog != null && progressDialog.isShowing()) {
+  private void dismissProgressDialog()
+  {
+    if (progressDialog != null && progressDialog.isShowing())
+    {
       progressDialog.dismiss();
       showCompletedMovementPopup();
     }
   }
 
-  private void showCompletedMovementPopup() {
+  private void showCompletedMovementPopup()
+  {
     Builder builderAccept = new Builder(this);
     builderAccept.setTitle(getString(R.string.full_displacement));
     builderAccept.setMessage(getString(R.string.the_displacement_has_ended));
     builderAccept.setIcon(android.R.drawable.ic_dialog_alert);
-    builderAccept.setPositiveButton(getString(android.R.string.ok), (dialogMoveCompleted, which) -> {
+    builderAccept.setPositiveButton(getString(android.R.string.ok), (dialogMoveCompleted, which) ->
+    {
       dialogMoveCompleted.dismiss();
       buttonLeftMovement.setEnabled(true);
       buttonRightMovement.setEnabled(true);
@@ -150,17 +168,22 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
     builderAccept.show();
   }
 
-  private void processEmbeddedAction(String action) {
-    if (EmbeddedCode.ME_ON.getValue().equals(action)) {
+  private void processEmbeddedAction(String action)
+  {
+    if (EmbeddedCode.ME_ON.getValue().equals(action))
+    {
       showToast("Desplazamiento en Progreso");
-    } else if (EmbeddedCode.ME_OFF.getValue().equals(action)) {
+    } else if (EmbeddedCode.ME_OFF.getValue().equals(action))
+    {
       dismissProgressDialog();
-    } else {
+    } else
+    {
       showToast("Acción Desconocida: " + action);
     }
   }
 
-  private void showToast(String message) {
+  private void showToast(String message)
+  {
     Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
   }
 

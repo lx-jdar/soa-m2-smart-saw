@@ -12,7 +12,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-public class PrecisionActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener {
+public class PrecisionActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener
+{
 
   //#region Attributes
 
@@ -31,7 +32,8 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
   //#region Activity Methods
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState)
+  {
     super.onCreate(savedInstanceState);
     initializeView();
     setListeners();
@@ -43,7 +45,8 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
 
   //#region Private Methods
 
-  private void initializeView() {
+  private void initializeView()
+  {
     setContentView(R.layout.activity_presicion);
     newValue = findViewById(R.id.field_position);
     buttonUpdate = findViewById(R.id.update_precision);
@@ -54,72 +57,89 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
     currentValue.setText(String.valueOf(precisionValue));
   }
 
-  private void setListeners() {
-    buttonUpdate.setButtonOnClickListener(v -> {
+  private void setListeners()
+  {
+    buttonUpdate.setButtonOnClickListener(v ->
+    {
       String newValueString = newValue.getText().toString();
       precisionValue = Integer.parseInt(newValueString);
-      if (isInputValid(newValueString)) {
+      if (isInputValid(newValueString))
+      {
         connectionBtService.sendMessageToEmbedded(newValueString);
-      } else {
+      } else
+      {
         newValue.setError(getString(R.string.required_field));
       }
     });
 
-    buttonBack.setOnClickListener(v -> {
+    buttonBack.setOnClickListener(v ->
+    {
       Intent intent = new Intent(PrecisionActivity.this, OptionsActivity.class);
       startActivity(intent);
       finish();
     });
 
-    buttonNext.setOnClickListener(v -> {
+    buttonNext.setOnClickListener(v ->
+    {
       String currentValueString = currentValue.getText().toString();
-      if (isInputValid(currentValueString)) {
+      if (isInputValid(currentValueString))
+      {
         Intent intent = new Intent(PrecisionActivity.this, MovementActivity.class);
         startActivity(intent);
         finish();
-      } else {
+      } else
+      {
         showToast(getString(R.string.current_value_is_required));
       }
     });
   }
 
-  private boolean isInputValid(String input) {
+  private boolean isInputValid(String input)
+  {
     return !TextUtils.isEmpty(input);
   }
 
-  private void processEmbeddedAction(String action) {
-    if (EmbeddedCode.PNOK.toString().equals(action)) {
+  private void processEmbeddedAction(String action)
+  {
+    if (EmbeddedCode.PNOK.toString().equals(action))
+    {
       currentValue.setText(String.valueOf(precisionValue));
       buttonNext.setEnabled(true);
       showToast("Actualización Existosa!");
-    } else {
+    } else
+    {
       showToast("Acción desconocida: " + action);
     }
   }
 
   @Override
-  public void onReceive(Intent intent) {
+  public void onReceive(Intent intent)
+  {
     String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
-    if (activity != null && activity.equals(ActivityType.PRECISION_ACTIVITY.toString())) {
+    if (activity != null && activity.equals(ActivityType.PRECISION_ACTIVITY.toString()))
+    {
       String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
       processEmbeddedAction(valor);
       showToast("Se recibió " + valor);
     }
   }
 
-  private void setConnectionBluetoothService() {
+  private void setConnectionBluetoothService()
+  {
     connectionBtService = BluetoothConnectionServiceImpl.getInstance();
     connectionBtService.setActivity(this);
     connectionBtService.setContext(getApplicationContext());
   }
 
-  private void setBroadcastConfiguration() {
+  private void setBroadcastConfiguration()
+  {
     BTMessageBroadcastReceiver receiver = new BTMessageBroadcastReceiver(this);
     IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
     LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
   }
 
-  private void showToast(String message) {
+  private void showToast(String message)
+  {
     Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
   }
 

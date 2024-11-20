@@ -1,9 +1,9 @@
 package com.example.smartsaw;
 
-public enum EmbeddedCode {
+public enum EmbeddedCode
+{
   SOFF("SIERRA_OFF"),
   SON("SIERRA_ON"),
-
   SUS("THRESHOLD_OVER_LIMIT"),
   S("SEND_START_SAW"),
   T("SEND_STOP_SAW"),
@@ -16,11 +16,13 @@ public enum EmbeddedCode {
 
   private final String value;
 
-  EmbeddedCode(String value) {
+  EmbeddedCode(String value)
+  {
     this.value = value;
   }
 
-  public String getValue() {
+  public String getValue()
+  {
     return value;
   }
 }

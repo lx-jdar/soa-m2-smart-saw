@@ -4,7 +4,8 @@ import android.content.Context;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public interface BluetoothConnectionService {
+public interface BluetoothConnectionService
+{
 
   String HC06_MAC_ADDRESS = "00:22:02:01:0F:38";
 

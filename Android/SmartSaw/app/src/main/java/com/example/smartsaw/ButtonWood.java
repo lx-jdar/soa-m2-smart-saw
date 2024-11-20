@@ -7,7 +7,8 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-public class ButtonWood extends FrameLayout {
+public class ButtonWood extends FrameLayout
+{
 
   //#region Attributes
 
@@ -18,7 +19,8 @@ public class ButtonWood extends FrameLayout {
 
   //#region Constructor
 
-  public ButtonWood(Context context, AttributeSet attrs) {
+  public ButtonWood(Context context, AttributeSet attrs)
+  {
     super(context, attrs);
     init(context);
   }
@@ -28,21 +30,25 @@ public class ButtonWood extends FrameLayout {
   //#region Public Methods
 
   @Override
-  public void setEnabled(boolean enabled) {
+  public void setEnabled(boolean enabled)
+  {
     super.setEnabled(enabled);
     image.setEnabled(enabled);
     text.setEnabled(enabled);
   }
 
-  public void setButtonText(String text) {
+  public void setButtonText(String text)
+  {
     this.text.setText(text);
   }
 
-  public void setButtonOnClickListener(OnClickListener listener) {
+  public void setButtonOnClickListener(OnClickListener listener)
+  {
     image.setOnClickListener(listener);
   }
 
-  public void setButtonImageResource(int resId) {
+  public void setButtonImageResource(int resId)
+  {
     image.setImageResource(resId);
   }
 
@@ -50,7 +56,8 @@ public class ButtonWood extends FrameLayout {
 
   //#region Private Methods
 
-  private void init(Context context) {
+  private void init(Context context)
+  {
     LayoutInflater.from(context).inflate(R.layout.button_wood, this, true);
     text = findViewById(R.id.txt_btn_wood);
     image = findViewById(R.id.img_btn_wood);

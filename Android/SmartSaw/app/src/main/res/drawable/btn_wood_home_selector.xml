@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Estado deshabilitado -->
-    <item android:drawable="@drawable/image_btn_wood_home_disabled" android:state_enabled="false" />
+  <!-- Estado deshabilitado -->
+  <item android:drawable="@drawable/image_btn_wood_home_disabled" android:state_enabled="false" />
 
-    <!-- Estado presionado (cuando se hace clic) -->
-    <item android:drawable="@drawable/image_btn_wood_home_pressed" android:state_pressed="true" />
+  <!-- Estado presionado (cuando se hace clic) -->
+  <item android:drawable="@drawable/image_btn_wood_home_pressed" android:state_pressed="true" />
 
-    <!-- Estado normal (por defecto) -->
-    <item android:drawable="@drawable/image_btn_wood_home_normal" />
+  <!-- Estado normal (por defecto) -->
+  <item android:drawable="@drawable/image_btn_wood_home_normal" />
 </selector>

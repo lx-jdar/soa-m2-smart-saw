@@ -1,80 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/movement"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MovementActivity">
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:id="@+id/movement"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  tools:context=".MovementActivity">
 
-    <ImageView
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/background_forest_nigth"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:ignore="ContentDescription" />
+  <ImageView
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    android:scaleType="centerCrop"
+    android:src="@drawable/background_forest_nigth"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    tools:ignore="ContentDescription" />
 
-    <TextView
-        android:id="@+id/title_movement"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        android:text="@string/direction_of_movement"
-        android:textAlignment="center"
-        android:textColor="@color/white"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:ignore="TextSizeCheck" />
+  <TextView
+    android:id="@+id/title_movement"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="50dp"
+    android:text="@string/direction_of_movement"
+    android:textAlignment="center"
+    android:textColor="@color/white"
+    android:textSize="30sp"
+    android:textStyle="bold"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    tools:ignore="TextSizeCheck" />
 
-    <com.example.smartsaw.ButtonWood
-        android:id="@+id/btn_left_movement"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/title_movement" />
+  <com.example.smartsaw.ButtonWood
+    android:id="@+id/btn_left_movement"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="100dp"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/title_movement" />
 
-    <com.example.smartsaw.ButtonWood
-        android:id="@+id/btn_right_movement"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_left_movement" />
+  <com.example.smartsaw.ButtonWood
+    android:id="@+id/btn_right_movement"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="100dp"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/btn_left_movement" />
 
-    <ImageButton
-        android:id="@+id/btn_movement_back"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        android:scaleX="0.5"
-        android:scaleY="0.5"
-        android:src="@drawable/btn_wood_back_selector"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:ignore="ContentDescription,SpeakableTextPresentCheck" />
+  <ImageButton
+    android:id="@+id/btn_movement_back"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:scaleX="0.5"
+    android:scaleY="0.5"
+    android:src="@drawable/btn_wood_back_selector"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    tools:ignore="ContentDescription,SpeakableTextPresentCheck" />
 
-    <ImageButton
-        android:id="@+id/btn_home"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="4dp"
-        android:layout_marginBottom="4dp"
-        android:background="@android:color/transparent"
-        android:scaleX="0.6"
-        android:scaleY="0.6"
-        android:src="@drawable/btn_wood_home_selector"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:ignore="ContentDescription" />
+  <ImageButton
+    android:id="@+id/btn_home"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="4dp"
+    android:layout_marginBottom="4dp"
+    android:background="@android:color/transparent"
+    android:scaleX="0.6"
+    android:scaleY="0.6"
+    android:src="@drawable/btn_wood_home_selector"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    tools:ignore="ContentDescription" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

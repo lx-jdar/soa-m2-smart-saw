@@ -18,7 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-public class OptionsActivity extends AppCompatActivity implements SensorEventListener, BTMessageBroadcastReceiver.BTMessageListener {
+public class OptionsActivity extends AppCompatActivity implements SensorEventListener, BTMessageBroadcastReceiver.BTMessageListener
+{
 
   //#region Attributes
 
@@ -42,12 +43,14 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
   //#region Activity Methods
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState)
+  {
     super.onCreate(savedInstanceState);
     initializeView();
     setListeners();
     sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-    if (sensorManager != null) {
+    if (sensorManager != null)
+    {
       accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
     }
     setConnectionBluetoothService();
@@ -56,21 +59,25 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
 
   @SuppressLint("MissingPermission")
   @Override
-  protected void onResume() {
+  protected void onResume()
+  {
     super.onResume();
-    if (accelerometer != null) {
+    if (accelerometer != null)
+    {
       sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
   }
 
   @Override
-  protected void onPause() {
+  protected void onPause()
+  {
     super.onPause();
     sensorManager.unregisterListener(this);
   }
 
   @Override
-  protected void onDestroy() {
+  protected void onDestroy()
+  {
     super.onDestroy();
     LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
   }
@@ -80,17 +87,23 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
   //#region Sensor Methods
 
   @Override
-  public void onSensorChanged(SensorEvent event) {
-    if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+  public void onSensorChanged(SensorEvent event)
+  {
+    if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+    {
       float x = event.values[0];
-      if (x > THRESHOLD) {
-        if (!isOn) {
+      if (x > THRESHOLD)
+      {
+        if (!isOn)
+        {
           isOn = true;
           switchOnOff.setChecked(true);
           connectionBtService.sendMessageToEmbedded(EmbeddedCode.S.toString());
         }
-      } else if (x < -THRESHOLD) {
-        if (isOn) {
+      } else if (x < -THRESHOLD)
+      {
+        if (isOn)
+        {
           isOn = false;
           switchOnOff.setChecked(false);
           connectionBtService.sendMessageToEmbedded(EmbeddedCode.T.toString());
@@ -100,7 +113,8 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
   }
 
   @Override
-  public void onAccuracyChanged(Sensor sensor, int accuracy) {
+  public void onAccuracyChanged(Sensor sensor, int accuracy)
+  {
   }
 
   //#endregion
@@ -108,9 +122,11 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
   //#region Broadcast Methods
 
   @Override
-  public void onReceive(Intent intent) {
+  public void onReceive(Intent intent)
+  {
     String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
-    if (activity != null && activity.equals(ActivityType.OPTIONS_ACTIVITY.toString())) {
+    if (activity != null && activity.equals(ActivityType.OPTIONS_ACTIVITY.toString()))
+    {
       String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
       showToast("Se recibió: " + valor);
       this.processEmbeddedAction(valor);
@@ -121,7 +137,8 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
 
   //#region Private Methods
 
-  private void initializeView() {
+  private void initializeView()
+  {
     setContentView(R.layout.activity_options);
     switchOnOff = findViewById(R.id.switch_on_off);
     buttonConfiguration = findViewById(R.id.btn_configuration);
@@ -130,39 +147,49 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     buttonPositioning.setButtonText(getString(R.string.position_saw));
   }
 
-  private void setButtonStates(boolean isEnabled) {
+  private void setButtonStates(boolean isEnabled)
+  {
     buttonConfiguration.setEnabled(isEnabled);
     buttonPositioning.setEnabled(isEnabled);
     buttonBack.setEnabled(isEnabled);
   }
 
-  private void setSawAction(boolean isChecked) {
+  private void setSawAction(boolean isChecked)
+  {
     boolean isEnabled = !isChecked;
     setButtonStates(isEnabled);
-    if (!isEnabled) {
+    if (!isEnabled)
+    {
       connectionBtService.sendMessageToEmbedded(EmbeddedCode.S.toString());
-    } else {
+    } else
+    {
       connectionBtService.sendMessageToEmbedded(EmbeddedCode.T.toString());
     }
   }
 
-  private void setListeners() {
-    switchOnOff.setOnCheckedChangeListener((buttonView, isChecked) -> {
-      if (!updateSawAction) {
+  private void setListeners()
+  {
+    switchOnOff.setOnCheckedChangeListener((buttonView, isChecked) ->
+    {
+      if (!updateSawAction)
+      {
         this.setSawAction(isChecked);
-      } else {
+      } else
+      {
         updateSawAction = false;
       }
     });
 
-    buttonConfiguration.setOnClickListener(v -> {
+    buttonConfiguration.setOnClickListener(v ->
+    {
       v.playSoundEffect(android.view.SoundEffectConstants.CLICK);
       Intent intent = new Intent(OptionsActivity.this, ConfigurationActivity.class);
       startActivity(intent);
       finish();
     });
 
-    buttonBack.setOnClickListener(v -> {
+    buttonBack.setOnClickListener(v ->
+    {
       Intent intent = new Intent(OptionsActivity.this, MainActivity.class);
       startActivity(intent);
       finish();
@@ -171,22 +198,26 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     buttonPositioning.setButtonOnClickListener(btnListener);
   }
 
-  View.OnClickListener btnListener = new View.OnClickListener() {
+  View.OnClickListener btnListener = new View.OnClickListener()
+  {
     @SuppressLint("SetTextI18n")
     @Override
-    public void onClick(View v) {
+    public void onClick(View v)
+    {
       Intent intent = new Intent(OptionsActivity.this, PrecisionActivity.class);
       startActivity(intent);
       finish();
     }
   };
 
-  private void showAlertPopupVerticalLimit() {
+  private void showAlertPopupVerticalLimit()
+  {
     Builder builderAccept = new Builder(this);
     builderAccept.setTitle(getString(R.string.popup_title_vertical_limit));
     builderAccept.setMessage(getString(R.string.popup_description_vertical_limit));
     builderAccept.setIcon(android.R.drawable.ic_dialog_alert);
-    builderAccept.setPositiveButton(getString(android.R.string.ok), (dialogMoveCompleted, which) -> {
+    builderAccept.setPositiveButton(getString(android.R.string.ok), (dialogMoveCompleted, which) ->
+    {
       updateSawAction = true;
       dialogMoveCompleted.dismiss();
       switchOnOff.setChecked(false);
@@ -196,31 +227,39 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     builderAccept.show();
   }
 
-  private void showToast(String message) {
+  private void showToast(String message)
+  {
     Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
   }
 
-  private void processEmbeddedAction(String action) {
-    if (EmbeddedCode.SON.toString().equals(action)) {
+  private void processEmbeddedAction(String action)
+  {
+    if (EmbeddedCode.SON.toString().equals(action))
+    {
       switchOnOff.setChecked(true);
       setButtonStates(false);
-    } else if (EmbeddedCode.SOFF.toString().equals(action)) {
+    } else if (EmbeddedCode.SOFF.toString().equals(action))
+    {
       setButtonStates(true);
       switchOnOff.setChecked(false);
-    } else if (EmbeddedCode.SUS.toString().equals(action)) {
+    } else if (EmbeddedCode.SUS.toString().equals(action))
+    {
       showAlertPopupVerticalLimit();
-    } else {
+    } else
+    {
       showToast("Acción desconocida: " + action);
     }
   }
 
-  private void setConnectionBluetoothService() {
+  private void setConnectionBluetoothService()
+  {
     connectionBtService = BluetoothConnectionServiceImpl.getInstance();
     connectionBtService.setActivity(this);
     connectionBtService.setContext(getApplicationContext());
   }
 
-  private void setBroadcastConfiguration() {
+  private void setBroadcastConfiguration()
+  {
     receiver = new BTMessageBroadcastReceiver(this);
     IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
     LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);

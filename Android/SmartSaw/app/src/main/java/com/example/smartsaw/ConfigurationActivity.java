@@ -9,7 +9,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-public class ConfigurationActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener {
+public class ConfigurationActivity extends AppCompatActivity implements BTMessageBroadcastReceiver.BTMessageListener
+{
 
   //#region Attributes
 
@@ -27,7 +28,8 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
   //#region Activity Methods
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState)
+  {
     super.onCreate(savedInstanceState);
     initializeView();
     setListeners();
@@ -36,7 +38,8 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
   }
 
   @Override
-  protected void onDestroy() {
+  protected void onDestroy()
+  {
     super.onDestroy();
     LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
   }
@@ -46,9 +49,11 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
   //#region Broadcast Methods
 
   @Override
-  public void onReceive(Intent intent) {
+  public void onReceive(Intent intent)
+  {
     String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
-    if (activity != null && activity.equals(ActivityType.CONFIGURATION_ACTIVITY.toString())) {
+    if (activity != null && activity.equals(ActivityType.CONFIGURATION_ACTIVITY.toString()))
+    {
       String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
       showToast("Se recibió " + valor);
     }
@@ -58,7 +63,8 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
 
   //#region Private Methods
 
-  private void initializeView() {
+  private void initializeView()
+  {
     setContentView(R.layout.activity_configuration);
     motorSpeed = findViewById(R.id.field_motor_speed);
     leftHorizontalLimit = findViewById(R.id.field_left_horizontal_limit);
@@ -70,21 +76,26 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
     buttonSaveChanges.setButtonText(getString(R.string.save));
   }
 
-  private void setListeners() {
-    buttonBack.setOnClickListener(v -> {
+  private void setListeners()
+  {
+    buttonBack.setOnClickListener(v ->
+    {
       Intent intent = new Intent(ConfigurationActivity.this, OptionsActivity.class);
       startActivity(intent);
       finish();
     });
 
-    buttonSaveChanges.setButtonOnClickListener(v -> {
-      if (validateFields()) {
+    buttonSaveChanges.setButtonOnClickListener(v ->
+    {
+      if (validateFields())
+      {
         Toast.makeText(ConfigurationActivity.this, getString(R.string.changes_saved), Toast.LENGTH_SHORT).show();
       }
     });
   }
 
-  private boolean validateFields() {
+  private boolean validateFields()
+  {
     boolean result = true;
     result &= validateField(motorSpeed, getString(R.string.required_field));
     result &= validateField(leftHorizontalLimit, getString(R.string.required_field));
@@ -94,27 +105,32 @@ public class ConfigurationActivity extends AppCompatActivity implements BTMessag
     return result;
   }
 
-  private boolean validateField(NumberField field, String errorMessage) {
-    if (field.getValue() == null || field.getValue() < 0) {
+  private boolean validateField(NumberField field, String errorMessage)
+  {
+    if (field.getValue() == null || field.getValue() < 0)
+    {
       field.setError(errorMessage);
       return false;
     }
     return true;
   }
 
-  private void setConnectionBluetoothService() {
+  private void setConnectionBluetoothService()
+  {
     BluetoothConnectionService connectionBtService = BluetoothConnectionServiceImpl.getInstance();
     connectionBtService.setActivity(this);
     connectionBtService.setContext(getApplicationContext());
   }
 
-  private void setBroadcastConfiguration() {
+  private void setBroadcastConfiguration()
+  {
     receiver = new BTMessageBroadcastReceiver(this);
     IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
     LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
   }
 
-  private void showToast(String message) {
+  private void showToast(String message)
+  {
     Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
   }
 
