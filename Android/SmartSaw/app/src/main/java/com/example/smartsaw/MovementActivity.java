@@ -52,6 +52,20 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
 
     //#endregion
 
+    //#region Broadcast Methods
+
+    @Override
+    public void onReceive(Intent intent) {
+        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
+        if (activity != null && activity.equals(ActivityType.MOVEMENT_ACTIVITY.toString())) {
+            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
+            processEmbeddedAction(valor);
+            showToast("Se recibió " + valor);
+        }
+    }
+
+    //#endregion
+
     //#region Private Methods
 
     private void initializeView() {
@@ -111,23 +125,7 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
             builder.setCancelable(false);
             progressDialog = builder.create();
         }
-
         progressDialog.show();
-        //new Thread(() -> simulateProgress()).start();
-    }
-
-    private void simulateProgress() {
-        for (int i = 0; i <= 100; i++) {
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            final int progress = i;
-            runOnUiThread(() -> progressBar.setProgress(progress));
-        }
-        runOnUiThread(this::dismissProgressDialog);
     }
 
     private void dismissProgressDialog() {
@@ -153,24 +151,18 @@ public class MovementActivity extends AppCompatActivity implements BTMessageBroa
         builderAccept.show();
     }
 
-    @Override
-    public void onReceive(Intent intent) {
-        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
-        if (activity != null && activity.equals(ActivityType.MOVEMENT_ACTIVITY.toString())) {
-            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
-            processEmbeddedAction(valor);
-            Toast.makeText(getApplicationContext(), "Se recibió " + valor, Toast.LENGTH_SHORT).show();
-        }
-    }
-
     private void processEmbeddedAction(String action) {
         if (EmbeddedCode.ME_ON.getValue().equals(action)) {
-            Toast.makeText(getApplicationContext(), "Desplazamiento en Progreso", Toast.LENGTH_SHORT).show();
+            showToast("Desplazamiento en Progreso");
         } else if (EmbeddedCode.ME_OFF.getValue().equals(action)) {
             dismissProgressDialog();
         } else {
-            Toast.makeText(getApplicationContext(), "Acción desconocida: " + action, Toast.LENGTH_SHORT).show();
+            showToast("Acción Desconocida: " + action);
         }
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     //#endregion

@@ -17,13 +17,14 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
     //#region Attributes
 
     private static int precisionValue = 0;
+
     private EditText newValue;
     private ButtonWood buttonUpdate;
     private ImageButton buttonBack;
     private ImageButton buttonNext;
     private TextView currentValue;
+
     private BluetoothConnectionService connectionBtService;
-    private BTMessageBroadcastReceiver receiver;
 
     //#endregion
 
@@ -34,12 +35,8 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
         super.onCreate(savedInstanceState);
         initializeView();
         setListeners();
-        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
-        connectionBtService.setActivity(this);
-        connectionBtService.setContext(getApplicationContext());
-        receiver = new BTMessageBroadcastReceiver(this);
-        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
+        setConnectionBluetoothService();
+        setBroadcastConfiguration();
     }
 
     //#endregion
@@ -81,7 +78,7 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
                 startActivity(intent);
                 finish();
             } else {
-                Toast.makeText(PrecisionActivity.this, getString(R.string.current_value_is_required), Toast.LENGTH_SHORT).show();
+                showToast(getString(R.string.current_value_is_required));
             }
         });
     }
@@ -94,9 +91,9 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
         if (EmbeddedCode.PNOK.toString().equals(action)) {
             currentValue.setText(String.valueOf(precisionValue));
             buttonNext.setEnabled(true);
-            Toast.makeText(getApplicationContext(), "Actualización Existosa!", Toast.LENGTH_SHORT).show();
+            showToast("Actualización Existosa!");
         } else {
-            Toast.makeText(getApplicationContext(), "Acción desconocida: " + action, Toast.LENGTH_SHORT).show();
+            showToast("Acción desconocida: " + action);
         }
     }
 
@@ -106,8 +103,24 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
         if (activity != null && activity.equals(ActivityType.PRECISION_ACTIVITY.toString())) {
             String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
             processEmbeddedAction(valor);
-            Toast.makeText(getApplicationContext(), "se recibió " + valor, Toast.LENGTH_SHORT).show();
+            showToast("Se recibió " + valor);
         }
+    }
+
+    private void setConnectionBluetoothService() {
+        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
+        connectionBtService.setActivity(this);
+        connectionBtService.setContext(getApplicationContext());
+    }
+
+    private void setBroadcastConfiguration() {
+        BTMessageBroadcastReceiver receiver = new BTMessageBroadcastReceiver(this);
+        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     //#endregion

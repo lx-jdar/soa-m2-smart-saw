@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -28,16 +29,18 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
 
     //#region Attributes
 
-    private static BluetoothConnectionServiceImpl instance = null;
     private AppCompatActivity activity;
-    private Handler bluetoothIn;
-    final int handlerState = 0;
+    private Context mContext;
+
+    private static BluetoothConnectionServiceImpl instance = null;
     private BluetoothAdapter btAdapter = null;
     private BluetoothSocket btSocket = null;
-    private final StringBuilder recDataString = new StringBuilder();
+    private Handler bluetoothIn;
     private ConnectedThread mConnectedThread;
-    private Context mContext;
-    public static final int MULTIPLE_PERMISSIONS = 5;
+    private final StringBuilder recDataString = new StringBuilder();
+
+    private final int handlerState = 0;
+    private static final int MULTIPLE_PERMISSIONS = 5;
     private static final UUID BT_DEVICE_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private static final String[] permissions = new String[]{
             android.Manifest.permission.BLUETOOTH,
@@ -45,6 +48,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             android.Manifest.permission.ACCESS_FINE_LOCATION
     };
+    private static final String TAG = "BLUETOOTH_CONNECTION_SERVICE_IMPLEMENTATION";
 
     //#endregion
 
@@ -67,20 +71,23 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
         BluetoothDevice device = btAdapter.getRemoteDevice(BluetoothConnectionService.HC06_MAC_ADDRESS);
         try {
             btSocket = createBluetoothSocket(device);
-        } catch (IOException e) {
+        } catch (IOException eCreateSocket) {
             showToast("La creacción del Socket fallo");
-            broadcastMessage(ActivityType.MAIN_ACTIVITY.toString(), "La creacción del Socket fallo");
+            broadcastMessage(TAG, "La creacción del Socket fallo: " + eCreateSocket);
+            return;
         }
         try {
             btSocket.connect();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException eConnectSocket) {
+            Log.e(TAG, "Ocurrio un error en la conexion del socket: " + eConnectSocket);
             try {
                 btSocket.close();
-            } catch (IOException e2) {
-                //insert code to deal with this
+            } catch (IOException eCloseSocket) {
+                Log.e(TAG, "Se produjo un error al cerrar el socket: " + eCloseSocket);
+                return;
             }
-            broadcastMessage(ActivityType.MAIN_ACTIVITY.toString(), "La creacción del Socket fallo");
+            broadcastMessage(TAG, "La creacción del Socket fallo");
+            return;
         }
         mConnectedThread = new ConnectedThread(btSocket);
         mConnectedThread.start();
@@ -90,7 +97,8 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
     public void onPauseBluetooth() {
         try {
             btSocket.close();
-        } catch (IOException e2) {
+        } catch (IOException e) {
+            Log.e(TAG, "Ocurrio un error al cerrar el Socket: " + e);
         }
     }
 
@@ -112,10 +120,7 @@ public class BluetoothConnectionServiceImpl implements BluetoothConnectionServic
             }
         }
         if (!listPermissionsNeeded.isEmpty()) {
-            ActivityCompat.requestPermissions(
-                    activity,
-                    listPermissionsNeeded.toArray(new String[0]),
-                    MULTIPLE_PERMISSIONS);
+            ActivityCompat.requestPermissions(activity, listPermissionsNeeded.toArray(new String[0]), MULTIPLE_PERMISSIONS);
             return false;
         }
         return true;

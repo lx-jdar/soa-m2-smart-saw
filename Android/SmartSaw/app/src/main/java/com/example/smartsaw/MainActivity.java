@@ -17,9 +17,9 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
 
     //#region Attributes
 
+    private boolean isConnected = false;
     private ButtonWood buttonStartSystem;
     private BluetoothConnectionService connectionBtService;
-    private boolean isConnected = false;
     private BTMessageBroadcastReceiver receiver;
 
     //#endregion
@@ -32,13 +32,9 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
         initializeView();
         buttonStartSystem.setButtonOnClickListener(buttonListener);
         if (BluetoothConnectionServiceImpl.checkPermissions(this)) {
-            connectionBtService = BluetoothConnectionServiceImpl.getInstance();
-            connectionBtService.setActivity(this);
-            connectionBtService.setContext(getApplicationContext());
+            setConnectionBluetoothService();
             connectionBtService.onCreateBluetooth();
-            receiver = new BTMessageBroadcastReceiver(this);
-            IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
-            LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
+            setBroadcastConfiguration();
         } else {
             finish();
         }
@@ -62,6 +58,20 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
         super.onDestroy();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
     }
+
+    //#endregion
+
+    //#region Broadcast Methods
+
+    @Override
+    public void onReceive(Intent intent) {
+        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
+        if (activity != null && activity.equals(ActivityType.MAIN_ACTIVITY.toString())) {
+            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
+            isConnected = (valor != null && valor.equals("Connected"));
+        }
+    }
+
     //#endregion
 
     //#region Private Methods
@@ -88,13 +98,16 @@ public class MainActivity extends AppCompatActivity implements BTMessageBroadcas
         }
     };
 
-    @Override
-    public void onReceive(Intent intent) {
-        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
-        if (activity != null && activity.equals(ActivityType.MAIN_ACTIVITY.toString())) {
-            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
-            isConnected = (valor != null && valor.equals("Connected"));
-        }
+    private void setConnectionBluetoothService() {
+        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
+        connectionBtService.setActivity(this);
+        connectionBtService.setContext(getApplicationContext());
+    }
+
+    private void setBroadcastConfiguration() {
+        receiver = new BTMessageBroadcastReceiver(this);
+        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
     }
 
     //#endregion

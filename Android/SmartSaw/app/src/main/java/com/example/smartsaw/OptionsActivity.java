@@ -26,13 +26,16 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     private ImageButton buttonConfiguration;
     private ButtonWood buttonPositioning;
     private ImageButton buttonBack;
+
     private SensorManager sensorManager;
     private Sensor accelerometer;
+
+    private BluetoothConnectionService connectionBtService;
+    private BTMessageBroadcastReceiver receiver;
+
     private boolean isOn = false;
     private static final float THRESHOLD = 5.0f;
     private boolean updateSawAction = false;
-    private BluetoothConnectionService connectionBtService;
-    private BTMessageBroadcastReceiver receiver;
 
     //#endregion
 
@@ -47,12 +50,8 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         if (sensorManager != null) {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         }
-        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
-        connectionBtService.setActivity(this);
-        connectionBtService.setContext(getApplicationContext());
-        receiver = new BTMessageBroadcastReceiver(this);
-        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
+        setConnectionBluetoothService();
+        setBroadcastConfiguration();
     }
 
     @SuppressLint("MissingPermission")
@@ -76,6 +75,10 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
     }
 
+    //#endregion
+
+    //#region Sensor Methods
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
@@ -98,6 +101,20 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
+
+    //#endregion
+
+    //#region Broadcast Methods
+
+    @Override
+    public void onReceive(Intent intent) {
+        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
+        if (activity != null && activity.equals(ActivityType.OPTIONS_ACTIVITY.toString())) {
+            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
+            showToast("Se recibió " + valor);
+            this.processEmbeddedAction(valor);
+        }
     }
 
     //#endregion
@@ -183,16 +200,6 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
-    @Override
-    public void onReceive(Intent intent) {
-        String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
-        if (activity != null && activity.equals(ActivityType.OPTIONS_ACTIVITY.toString())) {
-            String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
-            Toast.makeText(getApplicationContext(), "se recibió " + valor, Toast.LENGTH_SHORT).show();
-            this.processEmbeddedAction(valor);
-        }
-    }
-
     private void processEmbeddedAction(String action) {
         if (EmbeddedCode.SON.toString().equals(action)) {
             switchOnOff.setChecked(true);
@@ -203,8 +210,20 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         } else if (EmbeddedCode.SUS.toString().equals(action)) {
             showAlertPopupVerticalLimit();
         } else {
-            Toast.makeText(getApplicationContext(), "Acción desconocida: " + action, Toast.LENGTH_SHORT).show();
+            showToast("Acción desconocida: " + action);
         }
+    }
+
+    private void setConnectionBluetoothService() {
+        connectionBtService = BluetoothConnectionServiceImpl.getInstance();
+        connectionBtService.setActivity(this);
+        connectionBtService.setContext(getApplicationContext());
+    }
+
+    private void setBroadcastConfiguration() {
+        receiver = new BTMessageBroadcastReceiver(this);
+        IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
     }
 
     //#endregion
