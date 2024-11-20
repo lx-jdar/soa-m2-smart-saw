@@ -16,13 +16,12 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
 
     //#region Attributes
 
-    private static int precisionValue=0;
+    private static int precisionValue = 0;
     private EditText newValue;
     private ButtonWood buttonUpdate;
     private ImageButton buttonBack;
     private ImageButton buttonNext;
     private TextView currentValue;
-
     private BluetoothConnectionService connectionBtService;
     private BTMessageBroadcastReceiver receiver;
 
@@ -35,15 +34,12 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
         super.onCreate(savedInstanceState);
         initializeView();
         setListeners();
-
         connectionBtService = BluetoothConnectionServiceImpl.getInstance();
         connectionBtService.setActivity(this);
         connectionBtService.setContext(getApplicationContext());
-
-        // Registrar el receptor
         receiver = new BTMessageBroadcastReceiver(this);
         IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
     }
 
     //#endregion
@@ -66,8 +62,6 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
             String newValueString = newValue.getText().toString();
             precisionValue = Integer.parseInt(newValueString);
             if (isInputValid(newValueString)) {
-                //currentValue.setText(String.valueOf(precisionValue));
-                //buttonNext.setEnabled(true);
                 connectionBtService.sendMessageToEmbedded(newValueString);
             } else {
                 newValue.setError(getString(R.string.required_field));
@@ -98,24 +92,21 @@ public class PrecisionActivity extends AppCompatActivity implements BTMessageBro
 
     private void processEmbeddedAction(String action) {
         if (EmbeddedCode.PNOK.toString().equals(action)) {
-            //this.setMotionEngineAction(true);
             currentValue.setText(String.valueOf(precisionValue));
             buttonNext.setEnabled(true);
             Toast.makeText(getApplicationContext(), "Actualización Existosa!", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(getApplicationContext(), "Acción desconocida: "+action, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Acción desconocida: " + action, Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
     public void onReceive(Intent intent) {
-
-        // Modificar la variable personalizada
         String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
         if (activity != null && activity.equals(ActivityType.PRECISION_ACTIVITY.toString())) {
             String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
             processEmbeddedAction(valor);
-            Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "se recibió " + valor, Toast.LENGTH_SHORT).show();
         }
     }
 

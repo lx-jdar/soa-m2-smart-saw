@@ -19,6 +19,7 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class OptionsActivity extends AppCompatActivity implements SensorEventListener, BTMessageBroadcastReceiver.BTMessageListener {
+
     //#region Attributes
 
     private SwitchCompat switchOnOff;
@@ -29,11 +30,8 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     private Sensor accelerometer;
     private boolean isOn = false;
     private static final float THRESHOLD = 5.0f;
-
-    private boolean updateSawAction =false;
-
+    private boolean updateSawAction = false;
     private BluetoothConnectionService connectionBtService;
-
     private BTMessageBroadcastReceiver receiver;
 
     //#endregion
@@ -45,20 +43,16 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         super.onCreate(savedInstanceState);
         initializeView();
         setListeners();
-
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager != null) {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         }
-
         connectionBtService = BluetoothConnectionServiceImpl.getInstance();
         connectionBtService.setActivity(this);
         connectionBtService.setContext(getApplicationContext());
-
-        // Registrar el receptor
         receiver = new BTMessageBroadcastReceiver(this);
         IntentFilter filter = new IntentFilter(BluetoothConnectionService.ACTION_DATA_RECEIVE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(receiver,filter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(receiver, filter);
     }
 
     @SuppressLint("MissingPermission")
@@ -73,14 +67,12 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
     @Override
     protected void onPause() {
         super.onPause();
-        // Detiene el listener cuando la actividad está en segundo plano
         sensorManager.unregisterListener(this);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Desregistrar el receptor local para evitar fugas de memoria
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
     }
 
@@ -103,7 +95,6 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
             }
         }
     }
-
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -136,8 +127,6 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         } else {
             connectionBtService.sendMessageToEmbedded(EmbeddedCode.T.toString());
         }
-
-        //new Thread(() -> simulateProgress()).start();
     }
 
     private void setListeners() {
@@ -145,7 +134,7 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
             if (!updateSawAction) {
                 this.setSawAction(isChecked);
             } else {
-                updateSawAction =false;
+                updateSawAction = false;
             }
         });
 
@@ -175,14 +164,13 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
         }
     };
 
-    @SuppressWarnings("unused")
     private void showAlertPopupVerticalLimit() {
         Builder builderAccept = new Builder(this);
         builderAccept.setTitle(getString(R.string.popup_title_vertical_limit));
         builderAccept.setMessage(getString(R.string.popup_description_vertical_limit));
         builderAccept.setIcon(android.R.drawable.ic_dialog_alert);
         builderAccept.setPositiveButton(getString(android.R.string.ok), (dialogMoveCompleted, which) -> {
-            updateSawAction =true;
+            updateSawAction = true;
             dialogMoveCompleted.dismiss();
             switchOnOff.setChecked(false);
             setButtonStates(true);
@@ -197,50 +185,28 @@ public class OptionsActivity extends AppCompatActivity implements SensorEventLis
 
     @Override
     public void onReceive(Intent intent) {
-        // Modificar la variable personalizada
         String activity = intent.getStringExtra(BluetoothConnectionService.CONST_TOPIC);
         if (activity != null && activity.equals(ActivityType.OPTIONS_ACTIVITY.toString())) {
             String valor = intent.getStringExtra(BluetoothConnectionService.CONST_DATA);
-            Toast.makeText(getApplicationContext(), "se recibió "+valor, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "se recibió " + valor, Toast.LENGTH_SHORT).show();
             this.processEmbeddedAction(valor);
-
         }
     }
 
     private void processEmbeddedAction(String action) {
-         if (EmbeddedCode.SON.toString().equals(action)) {
-             switchOnOff.setChecked(true);
-             setButtonStates(false);
+        if (EmbeddedCode.SON.toString().equals(action)) {
+            switchOnOff.setChecked(true);
+            setButtonStates(false);
         } else if (EmbeddedCode.SOFF.toString().equals(action)) {
-             setButtonStates(true);
-             //updateSawAction =true;
-             switchOnOff.setChecked(false);
-         } else if (EmbeddedCode.SUS.toString().equals(action)) {
-             showAlertPopupVerticalLimit();
-         } else {
-            Toast.makeText(getApplicationContext(), "Acción desconocida: "+action, Toast.LENGTH_SHORT).show();
+            setButtonStates(true);
+            switchOnOff.setChecked(false);
+        } else if (EmbeddedCode.SUS.toString().equals(action)) {
+            showAlertPopupVerticalLimit();
+        } else {
+            Toast.makeText(getApplicationContext(), "Acción desconocida: " + action, Toast.LENGTH_SHORT).show();
         }
     }
 
     //#endregion
-
-    private void simulateProgress() {
-        for (int i = 0; i <= 100; i++) {
-            try {
-                // Simula el tiempo de ejecución (por ejemplo, un retraso de 50ms por cada incremento)
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            final int progress = i;  // Hacemos que el valor de 'i' sea final
-            // Actualiza el progreso en la UI
-            //runOnUiThread(() -> processEmbeddedAction("SUS"));  // Usamos 'progress' que es final
-        }
-
-        // Después de que el progreso llega al 100%, cierra el diálogo
-        runOnUiThread(() -> processEmbeddedAction("SOFF"));
-
-    }
 
 }

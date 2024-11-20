@@ -3,7 +3,6 @@ package com.example.smartsaw;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.widget.Toast;
 
 public class BTMessageBroadcastReceiver extends BroadcastReceiver {
 

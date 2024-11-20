@@ -15,8 +15,9 @@ public enum EmbeddedCode {
     OK("BLUETOOTH_CONNECTED");
 
     private final String value;
+
     EmbeddedCode(String value) {
-        this.value=value;
+        this.value = value;
     }
 
     public String getValue() {

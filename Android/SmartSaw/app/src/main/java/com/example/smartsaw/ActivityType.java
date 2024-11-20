@@ -9,11 +9,13 @@ public enum ActivityType {
     ;
 
     private final String activityValue;
+
     ActivityType(String activityValue) {
-        this.activityValue=activityValue;
+        this.activityValue = activityValue;
     }
 
     public String getValue() {
         return activityValue;
     }
+
 }

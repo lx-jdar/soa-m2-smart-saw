@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <SoftwareSerial.h>   // Incluimos la librería  SoftwareSerial
+#include <SoftwareSerial.h>
 // ------------------------------------------------
 // Etiquetas
 // ------------------------------------------------
@@ -14,7 +14,7 @@
 #define DEBOUNCE_TIME_MS 200
 #define DETENER_SIERRA 21
 #define MARGEN_DE_ERROR 1L
-#define MODO_PIN_SIERRA FALLING 	// CHANGE, RISING, FALLING
+#define MODO_PIN_SIERRA FALLING
 #define MOTOR_SPEED 255
 #define VALOR_CONTINUE -1
 #define VELOCIDAD_DEL_SONIDO 57
@@ -448,7 +448,7 @@ void maquinaEstado()
                     log("ESTADO_EMBEBIDO_SIERRA_ACTIVA", "EVENTO_LIMITE_VERTICAL_SUPERADO");
                     detenerMotorSierra();
                     apagarLed(&ledSierra);
-                    enviarMensajeToApp(EnumToString(SUS));  // SIERRA_UMBRAL_SUPERADO
+                    enviarMensajeToApp(EnumToString(SUS));
                     monitor.mensaje = "Pase el umbral minimo. Deteniendo el motor sierra ...\n";
                     monitor.mensaje += MENSAJE_INICIO;
                     monitor.estado = ESTADO_MONITOR_IMPRIMIR;
@@ -604,7 +604,6 @@ void enviarMensajeToApp(const char* data) {
 	if (isBluetoothConnected) {
 		BTSerial.write(data+"\n");
 	}
-
 }
 
 void verificarLecturaDesdeMonitorSerial()
@@ -638,12 +637,14 @@ void verificarLecturaDesdeMonitorSerial()
         }
 
         default:
-        	Serial.println("-----------------------------------------------------");
+		{
+			Serial.println("-----------------------------------------------------");
 			Serial.println("Estado del Monitor no reconocido...");
 			Serial.println(monitor.estado);
 			Serial.println(monitor.input);
 			Serial.println("-----------------------------------------------------");
             break;
+		}
     }
 }
 
@@ -715,10 +716,9 @@ const char* EnumToString(bluetoothEnum btCode) {
     }
 }
 
-
 void verificarBluetooth()
 {
-	if(BTSerial.available())    // Si llega un dato por el puerto BT se envía al monitor serial
+	if(BTSerial.available())
 	{
         String btInput = BTSerial.readStringUntil('\n');
         if (btInput.indexOf(BLUETOOTH_IZQUIERDA) == 0) {
@@ -756,7 +756,6 @@ void verificarBluetooth()
         	monitor.mensaje = "Se recicibió por BT el nro: " + monitor.input;
         	evento.tipo = EVENTO_INTRODUCCION_DE_DISTANCIA;
         }
-
         monitor.estado = ESTADO_MONITOR_IMPRIMIR;
 	}
 }
@@ -765,7 +764,6 @@ void verificarLimitesHorizontales()
 {
     if(valorDesplazamiento)
     {
-        //actualizarUltrasonido(&ultrasonidoHorizontal);
         posicionActual = ultrasonidoHorizontal.posicionPartida;
         int posibleDesplazamiento = posicionActual + (ultrasonidoHorizontal.sentido == SENTIDO_IZQUIERDA ? - valorDesplazamiento : valorDesplazamiento);
         if ((posibleDesplazamiento <= DISTANCIA_MINIMA_H || posibleDesplazamiento >= DISTANCIA_MAXIMA_H) && ultrasonidoHorizontal.estado == ESTADO_ULT_EN_MOVIMIENTO)
@@ -825,10 +823,9 @@ void verificarPosicionUltrasonidoHorizontal()
 
 void verificarPosicionUltrasonidoVertical()
 {
-	actualizarUltrasonido(&ultrasonidoVertical);	// Actualizar la posicion actual del ultrasonido
+	actualizarUltrasonido(&ultrasonidoVertical);
     switch (ultrasonidoVertical.estado)
 	{
-
 		case ESTADO_ULT_LONGITUD_PERMITIDA:
 		{
 			posicionActual = ultrasonidoVertical.cm;
@@ -884,7 +881,6 @@ void encenderMotorDesplazamiento(unsigned int pinPulsador)
         digitalWrite(motorDesplazamiento.pinTerminal2, direccionIzquierda ? LOW : HIGH);
     }
 }
-
 
 void detenerMotorDesplazamiento()
 {
